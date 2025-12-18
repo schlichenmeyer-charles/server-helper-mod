@@ -10,7 +10,6 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 // An example config class. This is not required, but it's a good idea to have one to keep your config organized.
 // Demonstrates how to use Forge's config APIs
@@ -18,43 +17,41 @@ import java.util.stream.Collectors;
 public class Config {
     private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
 
-    private static final ForgeConfigSpec.BooleanValue LOG_DIRT_BLOCK = BUILDER
-            .comment("Whether to log the dirt block on common setup")
-            .define("logDirtBlock", true);
+    // Defined Config values
+    private static final ForgeConfigSpec.BooleanValue enable_messages = BUILDER
+            .comment("Turn on and off the automatic messages.")
+            .define("enable_messages", true);
 
-    private static final ForgeConfigSpec.IntValue MAGIC_NUMBER = BUILDER
-            .comment("A magic number")
-            .defineInRange("magicNumber", 42, 0, Integer.MAX_VALUE);
+    private static final ForgeConfigSpec.ConfigValue<List<? extends String>> RESTART_TIMES = BUILDER
+            .comment("Daily restart times (24h HH:mm) in server local time e.g. [\"04:00\",\"16:00\"]")
+            .defineListAllowEmpty("restart_times", List.of("04:00"), o -> o instanceof String s && s.matches("^\\d{2}:\\d{2}$"));
 
-    public static final ForgeConfigSpec.ConfigValue<String> MAGIC_NUMBER_INTRODUCTION = BUILDER
-            .comment("What you want the introduction message to be for the magic number")
-            .define("magicNumberIntroduction", "The magic number is... ");
+    private static final ForgeConfigSpec.ConfigValue<List<? extends Integer>> WARN_MINUTES = BUILDER
+            .comment("Send Warnings when restart is N minutes away.")
+            .defineListAllowEmpty("warn_minutes", List.of(30,10,5,1), o -> o instanceof Integer i && i >= 0 && i <= 1440);
 
-    // a list of strings that are treated as resource locations for items
-    private static final ForgeConfigSpec.ConfigValue<List<? extends String>> ITEM_STRINGS = BUILDER
-            .comment("A list of items to log on common setup.")
-            .defineListAllowEmpty("items", List.of("minecraft:iron_ingot"), Config::validateItemName);
+
 
     static final ForgeConfigSpec SPEC = BUILDER.build();
 
-    public static boolean logDirtBlock;
-    public static int magicNumber;
-    public static String magicNumberIntroduction;
-    public static Set<Item> items;
+    public static boolean enableMessages;
+    public static List<String> restartTimes;
+    public static Set<Integer> warnMinutes;
 
-    private static boolean validateItemName(final Object obj) {
-        return obj instanceof final String itemName && ForgeRegistries.ITEMS.containsKey(new ResourceLocation(itemName));
+    private  static void bake() {
+        enableMessages = enable_messages.get();
+        restartTimes = List.copyOf(RESTART_TIMES.get());
+        warnMinutes = new java.util.HashSet<>(WARN_MINUTES.get());
+    }
+    @SubscribeEvent
+    static void onLoad(final ModConfigEvent.Loading event) {
+        if(event.getConfig().getSpec() != SPEC) return;
+        bake();
     }
 
     @SubscribeEvent
-    static void onLoad(final ModConfigEvent event) {
-        logDirtBlock = LOG_DIRT_BLOCK.get();
-        magicNumber = MAGIC_NUMBER.get();
-        magicNumberIntroduction = MAGIC_NUMBER_INTRODUCTION.get();
-
-        // convert the list of strings into a set of items
-        items = ITEM_STRINGS.get().stream()
-                .map(itemName -> ForgeRegistries.ITEMS.getValue(new ResourceLocation(itemName)))
-                .collect(Collectors.toSet());
+    static void onReload(final ModConfigEvent.Reloading event) {
+        if(event.getConfig().getSpec() != SPEC) return;
+        bake();
     }
 }
