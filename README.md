@@ -82,5 +82,5 @@ This mod does not add gameplay content and is intended for server administration
 
 ## License
 
-MIT License (or update this section to match your project)
+MIT License
 
