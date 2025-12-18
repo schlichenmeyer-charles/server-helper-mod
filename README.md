@@ -36,3 +36,51 @@ The goal of this mod is to provide clear, configurable restart warnings without 
 
 After the server runs once, a config file will be generated at:
 
+config/server_helper_mod-server.toml
+
+
+### Example Configuration
+
+```toml
+enable_messages = true
+
+restart_times = ["04:00", "16:00"]
+
+warn_minutes = [30, 10, 5, 1]
+```
+
+### Configuration Options
+
+| Option | Description |
+|------|------------|
+| `enable_messages` | Enable or disable restart announcements |
+| `restart_times` | Daily restart times in 24-hour `HH:mm` format |
+| `warn_minutes` | Minutes before restart to send warning messages |
+
+> All times use the server’s local timezone.
+
+---
+
+## Installation
+
+1. Install **Minecraft Forge 1.20.1 (47.x)**
+2. Place the mod JAR into your server’s `mods/` directory
+3. Start the server once to generate the config file
+4. Edit the config and restart the server
+
+---
+
+## Compatibility
+
+- Minecraft **1.20.1**
+- Forge **47.x**
+- Dedicated servers only
+
+This mod does not add gameplay content and is intended for server administration use.
+
+---
+
+## License
+
+MIT License (or update this section to match your project)
+
