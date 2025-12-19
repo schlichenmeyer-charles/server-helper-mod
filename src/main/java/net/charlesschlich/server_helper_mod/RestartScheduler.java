@@ -3,7 +3,6 @@ package net.charlesschlich.server_helper_mod;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.client.event.CustomizeGuiOverlayEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -66,7 +65,7 @@ public class RestartScheduler {
     }
 
     private static void doServerAction(MinecraftServer server) {
-        String cmd = Config.restartCommand;
+        String cmd = Config.commandToExecute;
         if (cmd == null || cmd.isBlank()) {
             cmd = "stop";
         }
@@ -122,7 +121,7 @@ public class RestartScheduler {
                     "save-all"
             );
 
-            if (Config.stopAtZero) {
+            if (Config.executeAtZero) {
                 doServerAction(server);
             }
         }

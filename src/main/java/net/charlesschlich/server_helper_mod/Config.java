@@ -22,8 +22,8 @@ public class Config {
 
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> RESTART_TIMES;
     private static final ForgeConfigSpec.ConfigValue<List<? extends Integer>> WARN_MINUTES;
-    private static final ForgeConfigSpec.ConfigValue<String> RESTART_COMMAND;
-    private static final ForgeConfigSpec.BooleanValue STOP_AT_ZERO;
+    private static final ForgeConfigSpec.ConfigValue<String> COMMAND_TO_EXECUTE;
+    private static final ForgeConfigSpec.BooleanValue EXECUTE_AT_ZERO;
 
     static {
         // --- [general] ---
@@ -46,13 +46,13 @@ public class Config {
                 .defineListAllowEmpty("warn_minutes", List.of(30, 10, 5, 1),
                         o -> o instanceof Integer i && i >= 0 && i <= 1440);
 
-        RESTART_COMMAND = BUILDER
-                .comment("Server command to execute at restart time (no leading '/'). Example: 'stop' or 'restart'")
+        COMMAND_TO_EXECUTE = BUILDER
+                .comment("Server command to execute at the end of the timer (no leading '/'). Example: 'stop' or 'restart'")
                 .define("command", "stop");
 
-        STOP_AT_ZERO = BUILDER
-                .comment("Whether the server should be stopped when the countdown reaches zero.")
-                .define("stop_at_zero", false);
+        EXECUTE_AT_ZERO = BUILDER
+                .comment("Whether the server should be ruin the above command when the countdown reaches zero.")
+                .define("execute_at_zero", false);
 
         BUILDER.pop();
 
@@ -65,8 +65,8 @@ public class Config {
     public static boolean enableMessages;
     public static List<String> restartTimes;
     public static Set<Integer> warnMinutes;
-    public static String restartCommand;
-    public static boolean stopAtZero;
+    public static String commandToExecute;
+    public static boolean executeAtZero;
 
     private static void bake() {
         enableMessages = ENABLE_MESSAGES.get();
@@ -74,14 +74,14 @@ public class Config {
         restartTimes = List.copyOf(RESTART_TIMES.get());
         warnMinutes = new HashSet<>(WARN_MINUTES.get());
 
-        restartCommand = RESTART_COMMAND.get().trim();
-        stopAtZero = STOP_AT_ZERO.get();
+        commandToExecute = COMMAND_TO_EXECUTE.get().trim();
+        executeAtZero = EXECUTE_AT_ZERO.get();
     }
 
     private static void logChanges(String reason) {
         LOGGER.info(
-                "[Server Helper Mod] Config {}: enableMessages={}, restartTimes={}, warnMinutes={}, restartCommand={}, stopAtZero={}",
-                reason, enableMessages, restartTimes, warnMinutes, restartCommand, stopAtZero
+                "[Server Helper Mod] Config {}: enableMessages={}, restartTimes={}, warnMinutes={}, commandToExecute={}, executeAtZero={}",
+                reason, enableMessages, restartTimes, warnMinutes, commandToExecute, executeAtZero
         );
     }
 
