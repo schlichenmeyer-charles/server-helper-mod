@@ -10,6 +10,9 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import net.minecraft.server.MinecraftServer;
 
@@ -92,6 +95,25 @@ public class ServerHelperCommands {
                                     return 1;
                                 })
                         )
+                        .then(Commands.literal("getlocaltime"))
+                            .executes(ctx -> {
+                                CommandSourceStack src = ctx.getSource();
+
+
+                                ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
+                                DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
+
+                                String timeStr = now.format(fmt);
+
+                                src.sendSuccess(
+                                        () -> Component.literal("Server local time: ")
+                                                .withStyle(ChatFormatting.GRAY)
+                                                .append(Component.literal(timeStr).withStyle(ChatFormatting.GOLD)),
+                                        false // executor only
+                                );
+
+                                return 1;
+                            })
 
 
         );
