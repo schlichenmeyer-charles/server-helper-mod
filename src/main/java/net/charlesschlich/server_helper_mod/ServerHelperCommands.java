@@ -95,7 +95,7 @@ public class ServerHelperCommands {
                                     return 1;
                                 })
                         )
-                        .then(Commands.literal("getlocaltime"))
+                        .then(Commands.literal("getlocaltime")
                             .executes(ctx -> {
                                 CommandSourceStack src = ctx.getSource();
 
@@ -114,7 +114,7 @@ public class ServerHelperCommands {
 
                                 return 1;
                             })
-
+                        )
 
         );
     }
