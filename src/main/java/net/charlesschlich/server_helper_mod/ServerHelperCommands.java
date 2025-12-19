@@ -9,6 +9,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+
 
 @Mod.EventBusSubscriber(modid = Server_helper_mod.MOD_ID)
 public class ServerHelperCommands {
@@ -37,6 +39,27 @@ public class ServerHelperCommands {
                                     return 1;
                                 })
                         )
+                        .then(Commands.literal("testwarn")
+                                .then(Commands.argument("minutes", IntegerArgumentType.integer(0, 1440))
+                                        .executes(ctx -> {
+                                            CommandSourceStack src = ctx.getSource();
+                                            int minutes = IntegerArgumentType.getInteger(ctx, "minutes");
+
+                                            // Broadcast to everyone
+                                            RestartScheduler.broadcastTestWarning(src.getServer(), minutes);
+
+                                            // Private confirmation to the executor only
+                                            src.sendSuccess(
+                                                    () -> Component.literal("Sent test warning for " + minutes + " minute(s).")
+                                                            .withStyle(ChatFormatting.GREEN),
+                                                    false
+                                            );
+
+                                            return 1;
+                                        })
+                                )
+                        )
+
         );
     }
 }

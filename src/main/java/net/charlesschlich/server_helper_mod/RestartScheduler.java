@@ -72,6 +72,19 @@ public class RestartScheduler {
         // Clean shutdown using the command system; wrapper/systemd/AMP should restart the process
         server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), cmd);
     }
+    public static void broadcastTestWarning(MinecraftServer server, int minutes) {
+        ChatFormatting color =
+                minutes <= 1 ? ChatFormatting.RED :
+                        minutes <= 5 ? ChatFormatting.GOLD :
+                                ChatFormatting.YELLOW;
+
+        Component msg = Component.literal("[Server] ")
+                .withStyle(ChatFormatting.RED)
+                .append(Component.literal("Restart in ").withStyle(color))
+                .append(Component.literal(minutes + " minute" + (minutes == 1 ? "" : "s") + "!").withStyle(color));
+
+        server.getPlayerList().broadcastSystemMessage(msg, false);
+    }
 
     @SubscribeEvent
     public static void onServerTick(TickEvent.ServerTickEvent event) {
