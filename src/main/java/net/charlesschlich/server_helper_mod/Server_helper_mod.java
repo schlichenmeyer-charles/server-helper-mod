@@ -29,7 +29,7 @@ public class Server_helper_mod {
     // Directly reference a slf4j logger
     private static final Logger LOGGER = LogUtils.getLogger();
     public Server_helper_mod() {
-        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, Config.SPEC);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
         modBus.addListener(this::commonSetup);
         MinecraftForge.EVENT_BUS.register(this);
@@ -47,6 +47,10 @@ public class Server_helper_mod {
         LOGGER.info("Restart times: {}", Config.restartTimes);
         LOGGER.info("Warning minutes: {}", Config.warnMinutes);
         LOGGER.info("Messages enabled: {}", Config.enableMessages);
+        LOGGER.info("Restart Command: {}", Config.restartCommand);
+        LOGGER.info("Stop at Zero: {}", Config.stopAtZero);
+
+        RestartScheduler.resetSchedule(event.getServer());
     }
 
 }
