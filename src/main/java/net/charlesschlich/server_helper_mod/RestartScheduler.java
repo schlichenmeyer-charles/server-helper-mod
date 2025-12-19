@@ -86,6 +86,27 @@ public class RestartScheduler {
         server.getPlayerList().broadcastSystemMessage(msg, false);
     }
 
+    public static RestartStatus getStatus(MinecraftServer server) {
+        if (server == null) return null;
+
+        // Ensure we have a computed nextRestart
+        if (nextRestart == null) {
+            nextRestart = computeNextRestart(server);
+            sentWarnings.clear();
+        }
+        if (nextRestart == null) return null;
+
+        long secondsLeft = Duration.between(Instant.now(), nextRestart).getSeconds();
+
+        ZoneId zone = ZoneId.systemDefault();
+        ZonedDateTime nextLocal = ZonedDateTime.ofInstant(nextRestart, zone);
+
+        return new RestartStatus(nextRestart, nextLocal, secondsLeft);
+    }
+
+    public record RestartStatus(Instant nextRestartUtc, ZonedDateTime nextRestartLocal, long secondsRemaining) {}
+
+
     @SubscribeEvent
     public static void onServerTick(TickEvent.ServerTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
