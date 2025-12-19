@@ -90,6 +90,13 @@ public class Config {
         if (server != null) RestartScheduler.resetSchedule(server);
     }
 
+    public static void reloadForCommonConfig(String reason) {
+        bake();                  // re-read ForgeConfigSpec values into your public fields
+        resetSchedulerIfRunning();// recompute next restart time, clear warning state, etc.
+        logChanges(reason);      // log to console
+    }
+
+
     @SubscribeEvent
     static void onLoad(final ModConfigEvent.Loading event) {
         if (event.getConfig().getSpec() != SPEC) return;
