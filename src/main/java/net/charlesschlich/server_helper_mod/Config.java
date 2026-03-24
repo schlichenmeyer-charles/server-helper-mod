@@ -25,6 +25,10 @@ public class Config {
     private static final ForgeConfigSpec.ConfigValue<String> COMMAND_TO_EXECUTE;
     private static final ForgeConfigSpec.BooleanValue EXECUTE_AT_ZERO;
 
+    private static final ForgeConfigSpec.ConfigValue<List<? extends String>> RULES;
+    private static final ForgeConfigSpec.ConfigValue<String> DISCORD_URL;
+    private static final ForgeConfigSpec.ConfigValue<String> WEBSITE_URL;
+
     static {
         // --- [general] ---
         BUILDER.push("general");
@@ -38,21 +42,54 @@ public class Config {
 
         RESTART_TIMES = BUILDER
                 .comment("Daily restart times (24h HH:mm) in server local time. e.g. [\"04:00\",\"16:00\"]")
-                .defineListAllowEmpty("times", List.of("04:00"),
-                        o -> o instanceof String s && s.matches("^\\d{2}:\\d{2}$"));
+                .defineListAllowEmpty(
+                        "times",
+                        List.of("04:00"),
+                        o -> o instanceof String s && s.matches("^\\d{2}:\\d{2}$")
+                );
 
         WARN_MINUTES = BUILDER
                 .comment("Send warnings when restart is N minutes away.")
-                .defineListAllowEmpty("warn_minutes", List.of(30, 10, 5, 1),
-                        o -> o instanceof Integer i && i >= 0 && i <= 1440);
+                .defineListAllowEmpty(
+                        "warn_minutes",
+                        List.of(30, 10, 5, 1),
+                        o -> o instanceof Integer i && i >= 0 && i <= 1440
+                );
 
         COMMAND_TO_EXECUTE = BUILDER
                 .comment("Server command to execute at the end of the timer (no leading '/'). Example: 'stop' or 'restart'")
                 .define("command", "stop");
 
         EXECUTE_AT_ZERO = BUILDER
-                .comment("Whether the server should be ruin the above command when the countdown reaches zero.")
+                .comment("Whether the server should run the above command when the countdown reaches zero.")
                 .define("execute_at_zero", false);
+
+        BUILDER.pop();
+
+        // --- [rules] ---
+        BUILDER.push("rules");
+
+        RULES = BUILDER
+                .comment("Rules shown when a player runs /rules")
+                .defineListAllowEmpty(
+                        "rules",
+                        List.of(
+                                "Be respectful to other players.",
+                                "No griefing, stealing, or unauthorized base raiding.",
+                                "No profane, sexual, or adult-themed chat or builds.",
+                                "No cheating, hacked clients, exploits, or duping.",
+                                "Follow admin instructions. Punishment is at admin discretion."
+                        ),
+                        o -> o instanceof String
+                );
+
+        DISCORD_URL = BUILDER
+                .comment("Discord invite URL shown in /rules")
+                .define("discord_url", "https://discord.gg/yourserver");
+
+        WEBSITE_URL = BUILDER
+                .comment("Website URL shown in /rules")
+                .define("website_url", "https://yourserver.com");
 
         BUILDER.pop();
 
@@ -68,6 +105,10 @@ public class Config {
     public static String commandToExecute;
     public static boolean executeAtZero;
 
+    public static List<String> rules;
+    public static String discordUrl;
+    public static String websiteUrl;
+
     private static void bake() {
         enableMessages = ENABLE_MESSAGES.get();
 
@@ -76,12 +117,24 @@ public class Config {
 
         commandToExecute = COMMAND_TO_EXECUTE.get().trim();
         executeAtZero = EXECUTE_AT_ZERO.get();
+
+        rules = List.copyOf(RULES.get());
+        discordUrl = DISCORD_URL.get().trim();
+        websiteUrl = WEBSITE_URL.get().trim();
     }
 
     private static void logChanges(String reason) {
         LOGGER.info(
-                "[Server Helper Mod] Config {}: enableMessages={}, restartTimes={}, warnMinutes={}, commandToExecute={}, executeAtZero={}",
-                reason, enableMessages, restartTimes, warnMinutes, commandToExecute, executeAtZero
+                "[Server Helper Mod] Config {}: enableMessages={}, restartTimes={}, warnMinutes={}, commandToExecute={}, executeAtZero={}, rules={}, discordUrl={}, websiteUrl={}",
+                reason,
+                enableMessages,
+                restartTimes,
+                warnMinutes,
+                commandToExecute,
+                executeAtZero,
+                rules,
+                discordUrl,
+                websiteUrl
         );
     }
 
@@ -91,11 +144,10 @@ public class Config {
     }
 
     public static void reloadForCommonConfig(String reason) {
-        bake();                  // re-read ForgeConfigSpec values into your public fields
-        resetSchedulerIfRunning();// recompute next restart time, clear warning state, etc.
-        logChanges(reason);      // log to console
+        bake();
+        resetSchedulerIfRunning();
+        logChanges(reason);
     }
-
 
     @SubscribeEvent
     static void onLoad(final ModConfigEvent.Loading event) {

@@ -11,10 +11,6 @@ import net.minecraft.network.chat.MutableComponent;
 
 public class RulesCommand {
 
-    // Change these to your actual server links
-    private static final String DISCORD_URL = Config.discordUrl;
-    private static final String WEBSITE_URL = Config.websiteUrl;
-
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
                 Commands.literal("rules")
@@ -73,8 +69,7 @@ public class RulesCommand {
                                             .withColor(ChatFormatting.WHITE)
                                             .withHoverEvent(new HoverEvent(
                                                     HoverEvent.Action.SHOW_TEXT,
-                                                    Component.literal("Rule #" + index)
-                                                            .withStyle(ChatFormatting.YELLOW)
+                                                    Component.literal("Rule #" + index).withStyle(ChatFormatting.YELLOW)
                                             ))
                                     )
                     );
@@ -94,43 +89,51 @@ public class RulesCommand {
 
         source.sendSuccess(() -> sectionTitle, false);
 
-        MutableComponent discordLine = Component.literal("• Discord: ")
-                .withStyle(ChatFormatting.DARK_AQUA)
-                .append(
-                        Component.literal("[Join Here]")
-                                .withStyle(style -> style
-                                        .withColor(ChatFormatting.BLUE)
-                                        .withUnderlined(true)
-                                        .withClickEvent(new ClickEvent(
-                                                ClickEvent.Action.OPEN_URL,
-                                                DISCORD_URL
-                                        ))
-                                        .withHoverEvent(new HoverEvent(
-                                                HoverEvent.Action.SHOW_TEXT,
-                                                Component.literal("Open the server Discord")
-                                                        .withStyle(ChatFormatting.YELLOW)
-                                        ))
-                                )
-                );
+        if (Config.discordUrl != null && !Config.discordUrl.isBlank()) {
+            MutableComponent discordLine = Component.literal("• Discord: ")
+                    .withStyle(ChatFormatting.DARK_AQUA)
+                    .append(
+                            Component.literal("[Join Here]")
+                                    .withStyle(style -> style
+                                            .withColor(ChatFormatting.BLUE)
+                                            .withUnderlined(true)
+                                            .withClickEvent(new ClickEvent(
+                                                    ClickEvent.Action.OPEN_URL,
+                                                    Config.discordUrl
+                                            ))
+                                            .withHoverEvent(new HoverEvent(
+                                                    HoverEvent.Action.SHOW_TEXT,
+                                                    Component.literal("Open the server Discord")
+                                                            .withStyle(ChatFormatting.YELLOW)
+                                            ))
+                                    )
+                    );
 
-        MutableComponent websiteLine = Component.literal("• Website: ")
-                .withStyle(ChatFormatting.DARK_GREEN)
-                .append(
-                        Component.literal("[Open Site]")
-                                .withStyle(style -> style
-                                        .withColor(ChatFormatting.BLUE)
-                                        .withUnderlined(true)
-                                        .withClickEvent(new ClickEvent(
-                                                ClickEvent.Action.OPEN_URL,
-                                                WEBSITE_URL
-                                        ))
-                                        .withHoverEvent(new HoverEvent(
-                                                HoverEvent.Action.SHOW_TEXT,
-                                                Component.literal("Open the server website")
-                                                        .withStyle(ChatFormatting.YELLOW)
-                                        ))
-                                )
-                );
+            source.sendSuccess(() -> discordLine, false);
+        }
+
+        if (Config.websiteUrl != null && !Config.websiteUrl.isBlank()) {
+            MutableComponent websiteLine = Component.literal("• Website: ")
+                    .withStyle(ChatFormatting.DARK_GREEN)
+                    .append(
+                            Component.literal("[Open Site]")
+                                    .withStyle(style -> style
+                                            .withColor(ChatFormatting.BLUE)
+                                            .withUnderlined(true)
+                                            .withClickEvent(new ClickEvent(
+                                                    ClickEvent.Action.OPEN_URL,
+                                                    Config.websiteUrl
+                                            ))
+                                            .withHoverEvent(new HoverEvent(
+                                                    HoverEvent.Action.SHOW_TEXT,
+                                                    Component.literal("Open the server website")
+                                                            .withStyle(ChatFormatting.YELLOW)
+                                            ))
+                                    )
+                    );
+
+            source.sendSuccess(() -> websiteLine, false);
+        }
 
         MutableComponent refreshLine = Component.literal("• View rules again: ")
                 .withStyle(ChatFormatting.GRAY)
@@ -151,8 +154,6 @@ public class RulesCommand {
                                 )
                 );
 
-        source.sendSuccess(() -> discordLine, false);
-        source.sendSuccess(() -> websiteLine, false);
         source.sendSuccess(() -> refreshLine, false);
         source.sendSuccess(() -> Component.empty(), false);
     }
