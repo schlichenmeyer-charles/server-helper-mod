@@ -17,6 +17,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.charlesschlich.server_helper_mod.Config;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/mods.toml file
@@ -40,6 +41,12 @@ public class Server_helper_mod {
 
     }
 
+    @SubscribeEvent
+    public void onRegisterCommands(RegisterCommandsEvent event) {
+        RulesCommand.register(event.getDispatcher());
+        LOGGER.info("[Server Helper Mod] Registered /rules command");
+    }
+
     // You can use SubscribeEvent and let the Event Bus discover methods to call
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
@@ -47,6 +54,7 @@ public class Server_helper_mod {
         LOGGER.info("Restart times: {}", Config.restartTimes);
         LOGGER.info("Warning minutes: {}", Config.warnMinutes);
         LOGGER.info("Messages enabled: {}", Config.enableMessages);
+        LOGGER.info("Rules: {}", Config.rules);
     }
 
 }

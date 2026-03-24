@@ -29,7 +29,26 @@ public class Config {
     private static final ForgeConfigSpec.ConfigValue<List<? extends Integer>> WARN_MINUTES = BUILDER
             .comment("Send Warnings when restart is N minutes away.")
             .defineListAllowEmpty("warn_minutes", List.of(30,10,5,1), o -> o instanceof Integer i && i >= 0 && i <= 1440);
+    private static final ForgeConfigSpec.ConfigValue<List<? extends String>> RULES = BUILDER
+            .comment("Rules shown when a player runs /rules")
+            .defineListAllowEmpty(
+                    "rules",
+                    List.of(
+                            "Be respectful to other players.",
+                            "No griefing, stealing, or unauthorized base raiding.",
+                            "No profane, sexual, or adult-themed chat/content.",
+                            "No cheating, hacked clients, exploits, or duping.",
+                            "Follow admin instructions. Punishment is at admin discretion."
+                    ),
+                    o -> o instanceof String
+            );
+    private static final ForgeConfigSpec.ConfigValue<String> DISCORD_URL = BUILDER
+            .comment("Discord invite URL shown in /rules")
+            .define("discord_url", "https://discord.gg/yourserver");
 
+    private static final ForgeConfigSpec.ConfigValue<String> WEBSITE_URL = BUILDER
+            .comment("Website URL shown in /rules")
+            .define("website_url", "https://yourserver.com");
 
 
     static final ForgeConfigSpec SPEC = BUILDER.build();
@@ -37,11 +56,17 @@ public class Config {
     public static boolean enableMessages;
     public static List<String> restartTimes;
     public static Set<Integer> warnMinutes;
+    public static List<String> rules;
+    public static String discordUrl;
+    public static String websiteUrl;
 
     private  static void bake() {
         enableMessages = enable_messages.get();
         restartTimes = List.copyOf(RESTART_TIMES.get());
         warnMinutes = new java.util.HashSet<>(WARN_MINUTES.get());
+        rules = List.copyOf(RULES.get());
+        discordUrl = DISCORD_URL.get();
+        websiteUrl = WEBSITE_URL.get();
     }
     @SubscribeEvent
     static void onLoad(final ModConfigEvent.Loading event) {
