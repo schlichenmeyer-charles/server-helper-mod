@@ -8,6 +8,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
@@ -31,6 +32,12 @@ public class Server_helper_mod {
     private void commonSetup(final FMLCommonSetupEvent event) {
         // Some common setup code
 
+    }
+    @SubscribeEvent
+    public void onRegisterCommands(RegisterCommandsEvent event) {
+        LOGGER.info("[Server Helper Mod] RegisterCommandsEvent fired");
+        RulesCommand.register(event.getDispatcher());
+        LOGGER.info("[Server Helper Mod] /rules registered");
     }
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call
