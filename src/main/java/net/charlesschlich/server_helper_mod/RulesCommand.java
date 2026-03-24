@@ -14,13 +14,7 @@ public class RulesCommand {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
                 Commands.literal("rules")
-                        .executes(context -> {
-                            context.getSource().sendSuccess(
-                                    () -> Component.literal("Rules command works."),
-                                    false
-                            );
-                            return 1;
-                        })
+                        .executes(context -> showRules(context.getSource()))
         );
     }
 
@@ -38,19 +32,21 @@ public class RulesCommand {
                         .withColor(ChatFormatting.GOLD)
                         .withBold(true));
 
-        source.sendSuccess(() -> header, false);
-
         MutableComponent subtitle = Component.literal("Please read and follow these rules while playing.")
                 .withStyle(ChatFormatting.YELLOW);
 
+        source.sendSuccess(() -> header, false);
         source.sendSuccess(() -> subtitle, false);
-        source.sendSuccess(() -> Component.empty(), false);
+        source.sendSuccess(Component::empty, false);
     }
 
     private static void sendRulesList(CommandSourceStack source) {
         if (Config.rules == null || Config.rules.isEmpty()) {
-            source.sendSuccess(() -> Component.literal("No rules are currently configured.")
-                    .withStyle(ChatFormatting.RED), false);
+            source.sendSuccess(
+                    () -> Component.literal("No rules are currently configured.")
+                            .withStyle(ChatFormatting.RED),
+                    false
+            );
             return;
         }
 
@@ -63,8 +59,8 @@ public class RulesCommand {
         source.sendSuccess(() -> sectionTitle, false);
 
         for (int i = 0; i < Config.rules.size(); i++) {
-            int index = i + 1;
-            String ruleText = Config.rules.get(i);
+            final int index = i + 1;
+            final String ruleText = Config.rules.get(i);
 
             MutableComponent line = Component.literal(index + ". ")
                     .withStyle(ChatFormatting.GRAY)
@@ -74,7 +70,8 @@ public class RulesCommand {
                                             .withColor(ChatFormatting.WHITE)
                                             .withHoverEvent(new HoverEvent(
                                                     HoverEvent.Action.SHOW_TEXT,
-                                                    Component.literal("Rule #" + index).withStyle(ChatFormatting.YELLOW)
+                                                    Component.literal("Rule #" + index)
+                                                            .withStyle(ChatFormatting.YELLOW)
                                             ))
                                     )
                     );
@@ -82,7 +79,7 @@ public class RulesCommand {
             source.sendSuccess(() -> line, false);
         }
 
-        source.sendSuccess(() -> Component.empty(), false);
+        source.sendSuccess(Component::empty, false);
     }
 
     private static void sendLinksSection(CommandSourceStack source) {
@@ -160,7 +157,7 @@ public class RulesCommand {
                 );
 
         source.sendSuccess(() -> refreshLine, false);
-        source.sendSuccess(() -> Component.empty(), false);
+        source.sendSuccess(Component::empty, false);
     }
 
     private static void sendFooter(CommandSourceStack source) {
