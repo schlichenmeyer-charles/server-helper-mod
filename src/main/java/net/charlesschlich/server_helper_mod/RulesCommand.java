@@ -14,8 +14,13 @@ public class RulesCommand {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
                 Commands.literal("rules")
-                        .requires(source -> true)
-                        .executes(context -> showRules(context.getSource()))
+                        .executes(context -> {
+                            context.getSource().sendSuccess(
+                                    () -> Component.literal("Rules command works."),
+                                    false
+                            );
+                            return 1;
+                        })
         );
     }
 
