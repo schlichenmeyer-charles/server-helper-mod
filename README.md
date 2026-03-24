@@ -27,8 +27,8 @@ The goal of this mod is to provide clear, configurable restart warnings without 
 - When the countdown reaches zero, the mod issues a clean `/stop`
 
 > ⚠️ **Important:**  
-> This mod does **not** restart the server process itself.  
-> You must use a wrapper, script, or service manager (systemd, AMP, Docker, etc.) to restart the server after it stops.
+> This mod has the option, defined by the Config file, to issue a command or not
+> If your hosting provider does not support restarts through the console use the automated tools from the hosting provided and disable the command execution.
 
 ---
 
@@ -42,11 +42,22 @@ config/server_helper_mod-server.toml
 ### Example Configuration
 
 ```toml
-enable_messages = true
 
-restart_times = ["04:00", "16:00"]
+[general]
+	#Turn on and off automatic restart messages.
+	enable_messages = true
 
-warn_minutes = [30, 10, 5, 1]
+[restart]
+	#Daily restart times (24h HH:mm) in server local time. e.g. ["04:00","16:00"]
+	times = ["04:00"]
+	#Send warnings when restart is N minutes away.
+	warn_minutes = [30, 10, 5, 1]
+	#Server command to execute at restart time (no leading '/'). Example: 'stop' or 'restart'
+	command = "stop"
+	#Whether the server should be stopped when the countdown reaches zero.
+	stop_at_zero = false
+
+
 ```
 
 ### Configuration Options
@@ -54,8 +65,10 @@ warn_minutes = [30, 10, 5, 1]
 | Option | Description |
 |------|------------|
 | `enable_messages` | Enable or disable restart announcements |
-| `restart_times` | Daily restart times in 24-hour `HH:mm` format |
+| `times` | Daily restart times in 24-hour `HH:mm` format |
 | `warn_minutes` | Minutes before restart to send warning messages |
+| `command` | The command that the server executes when the countdown reaches zero |
+| `stop_at_zero` | Determines if the above command runs when the countdown reaches zero |
 
 > All times use the server’s local timezone.
 
