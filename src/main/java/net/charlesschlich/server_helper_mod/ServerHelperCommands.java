@@ -38,8 +38,29 @@ public class ServerHelperCommands {
 
                                     // Message ONLY to the command executor
                                     src.sendSuccess(() -> Component.literal(
-                                            "Reloaded. times=" + Config.restartTimes + ", warn=" + Config.warnMinutes
+                                            "Reloaded config successfully."
                                     ).withStyle(ChatFormatting.GREEN), false);
+
+                                    src.sendSuccess(() -> Component.literal(
+                                            "Restart times: " + Config.restartTimes +
+                                                    " | Warn minutes: " + Config.warnMinutes
+                                    ).withStyle(ChatFormatting.GRAY), false);
+
+                                    src.sendSuccess(() -> Component.literal(
+                                            "Rules loaded: " + (Config.rules != null ? Config.rules.size() : 0)
+                                    ).withStyle(ChatFormatting.AQUA), false);
+
+                                    if (Config.discordUrl != null && !Config.discordUrl.isBlank()) {
+                                        src.sendSuccess(() -> Component.literal(
+                                                "Discord URL: " + Config.discordUrl
+                                        ).withStyle(ChatFormatting.BLUE), false);
+                                    }
+
+                                    if (Config.websiteUrl != null && !Config.websiteUrl.isBlank()) {
+                                        src.sendSuccess(() -> Component.literal(
+                                                "Website URL: " + Config.websiteUrl
+                                        ).withStyle(ChatFormatting.BLUE), false);
+                                    }
 
                                     return 1;
                                 })
