@@ -26,8 +26,6 @@ public class Server_helper_mod {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
         modBus.addListener(this::commonSetup);
         MinecraftForge.EVENT_BUS.register(this);
-
-        BanItemManager.load();
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
