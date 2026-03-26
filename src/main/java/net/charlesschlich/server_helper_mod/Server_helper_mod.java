@@ -26,6 +26,8 @@ public class Server_helper_mod {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
         modBus.addListener(this::commonSetup);
         MinecraftForge.EVENT_BUS.register(this);
+
+        BanItemManager.load();
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
@@ -49,6 +51,7 @@ public class Server_helper_mod {
         LOGGER.info("Command to execute: {}", Config.commandToExecute);
         LOGGER.info("Execute at Zero: {}", Config.executeAtZero);
 
+        BanItemManager.load();
         RestartScheduler.resetSchedule(event.getServer());
     }
 
