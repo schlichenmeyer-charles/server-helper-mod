@@ -1,85 +1,165 @@
 # Server Helper Mod
 
-**Server Helper Mod** is a lightweight, server-side Forge mod for **Minecraft 1.20.1** that automatically notifies players in chat when the server is approaching a scheduled restart.
+**Server Helper Mod** is a lightweight, server-side Forge mod for **Minecraft 1.20.1** that helps with common server administration tasks: scheduled restart warnings, configurable server rules, and banned-item enforcement.
 
-The goal of this mod is to provide clear, configurable restart warnings without requiring plugins, command blocks, or client-side mods.
+The mod is intended for dedicated servers and does not require players to install anything on their clients.
 
 ---
 
 ## Features
 
-- ⏰ **Scheduled restarts**
-  - Define one or more daily restart times
-- 💬 **Automatic chat warnings**
-  - Broadcast countdown messages at configurable intervals
-- ⚙️ **Server-side only**
-  - No client installation required
-- 🔁 **Clean restarts**
-  - Safely stops the server so your service manager can restart it
+- **Scheduled restarts**
+  - Define one or more daily restart times in server local time.
+  - Broadcast configurable warning messages before the restart.
+  - Optionally run a server command when the countdown reaches zero.
+
+- **Rules command**
+  - Players can run `/rules` to view configured server rules.
+  - Optional Discord and website links are shown as clickable chat links.
+
+- **Banned item management**
+  - Add, remove, reload, and list banned items in-game.
+  - Soft bans block placement/deployment behavior and remove soft-banned items from automation containers such as dispensers and droppers.
+  - Hard bans block use and remove matching item stacks from player inventories, ender chests, open containers, and loaded containers.
+
+- **Admin utilities**
+  - Reload all mod data without restarting the server.
+  - Check the next scheduled restart.
+  - Send test restart warnings.
+  - Check the server's local time.
 
 ---
 
-## How It Works
+## Commands
 
-- The mod reads a restart schedule from a TOML config file
-- On server ticks, it checks how long remains until the next restart
-- At configured times (e.g. 30, 10, 5, 1 minute remaining), it sends chat warnings
-- When the countdown reaches zero, the mod issues a clean `/stop`
+### Player Commands
 
-> ⚠️ **Important:**  
-> This mod has the option, defined by the Config file, to issue a command or not
-> If your hosting provider does not support restarts through the console use the automated tools from the hosting provided and disable the command execution.
+| Command | Description |
+| --- | --- |
+| `/rules` | Shows the configured server rules and helpful links. |
+| `/banitems list` | Lists currently banned items. |
+
+### Operator Commands
+
+| Command | Description |
+| --- | --- |
+| `/serverhelper reload` | Reloads config, rules, restart schedule, banned items, and sweeps loaded inventories/containers. |
+| `/serverhelper testwarn <minutes>` | Broadcasts a test restart warning. |
+| `/serverhelper restartstatus` | Shows the next scheduled restart and remaining seconds. |
+| `/serverhelper getlocaltime` | Shows the server's local date/time. |
+| `/banitems reload` | Reloads the banned item file and sweeps loaded inventories/containers. |
+| `/banitems hardban hand` | Hard-bans the item currently held in your main hand. |
+| `/banitems hardban <item>` | Hard-bans an item by registry ID, such as `minecraft:bedrock`. |
+| `/banitems softban hand` | Soft-bans the item currently held in your main hand. |
+| `/banitems softban <item>` | Soft-bans an item by registry ID. |
+| `/banitems unban hand` | Removes the ban for the item currently held in your main hand. |
+| `/banitems unban <item>` | Removes a ban by registry ID. |
 
 ---
 
 ## Configuration
 
-After the server runs once, a config file will be generated at:
+After the server runs once, Forge generates the common config file at:
 
-config/server_helper_mod-server.toml
+```text
+config/server_helper_mod-common.toml
+```
 
+Banned items are stored separately at:
 
-### Example Configuration
+```text
+config/server_helper_mod_banned_items.json
+```
+
+### Example Config
 
 ```toml
-
 [general]
-	#Turn on and off automatic restart messages.
+	# Turn on and off automatic restart messages.
 	enable_messages = true
 
 [restart]
-	#Daily restart times (24h HH:mm) in server local time. e.g. ["04:00","16:00"]
+	# Daily restart times (24h HH:mm) in server local time. e.g. ["04:00","16:00"]
 	times = ["04:00"]
-	#Send warnings when restart is N minutes away.
+
+	# Send warnings when restart is N minutes away.
 	warn_minutes = [30, 10, 5, 1]
-	#Server command to execute at restart time (no leading '/'). Example: 'stop' or 'restart'
+
+	# Server command to execute at the end of the timer (no leading '/').
+	# Example: "stop" or "restart"
 	command = "stop"
-	#Whether the server should be stopped when the countdown reaches zero.
-	stop_at_zero = false
 
+	# Whether the server should run the above command when the countdown reaches zero.
+	execute_at_zero = false
 
+[rules]
+	# Rules shown when a player runs /rules
+	rules = [
+		"Be respectful to other players.",
+		"No griefing, stealing, or unauthorized base raiding.",
+		"No profane, sexual, or adult-themed chat or builds.",
+		"No cheating, hacked clients, exploits, or duping.",
+		"Follow admin instructions. Punishment is at admin discretion."
+	]
+
+	# Discord invite URL shown in /rules
+	discord_url = "https://discord.gg/yourserver"
+
+	# Website URL shown in /rules
+	website_url = "https://yourserver.com"
 ```
 
-### Configuration Options
+### Config Options
 
 | Option | Description |
-|------|------------|
-| `enable_messages` | Enable or disable restart announcements |
-| `times` | Daily restart times in 24-hour `HH:mm` format |
-| `warn_minutes` | Minutes before restart to send warning messages |
-| `command` | The command that the server executes when the countdown reaches zero |
-| `stop_at_zero` | Determines if the above command runs when the countdown reaches zero |
+| --- | --- |
+| `general.enable_messages` | Enables or disables automatic restart announcements. |
+| `restart.times` | Daily restart times in 24-hour `HH:mm` format. |
+| `restart.warn_minutes` | Minute marks before restart when warnings are broadcast. |
+| `restart.command` | Command to execute at restart time if `execute_at_zero` is enabled. |
+| `restart.execute_at_zero` | Runs `restart.command` when the countdown reaches zero. |
+| `rules.rules` | Lines shown by `/rules`. |
+| `rules.discord_url` | Discord link shown by `/rules`; leave blank to hide it. |
+| `rules.website_url` | Website link shown by `/rules`; leave blank to hide it. |
 
-> All times use the server’s local timezone.
+All restart times use the server's local timezone.
+
+---
+
+## Banned Items File
+
+The banned items JSON file maps item registry IDs to either `soft` or `hard`:
+
+```json
+{
+  "minecraft:bedrock": "hard",
+  "minecraft:tnt": "soft"
+}
+```
+
+You can edit this file directly and run `/serverhelper reload` or `/banitems reload`, or manage it in-game with `/banitems`.
+
+---
+
+## Reload Behavior
+
+`/serverhelper reload` refreshes all runtime data currently managed by the mod:
+
+- Reloads the Forge common config from disk.
+- Rebakes restart settings, rules, Discord link, and website link.
+- Resets the restart scheduler using the new values.
+- Reloads `server_helper_mod_banned_items.json`.
+- Sweeps online player inventories, ender chests, open containers, and tracked loaded chunk containers.
 
 ---
 
 ## Installation
 
-1. Install **Minecraft Forge 1.20.1 (47.x)**
-2. Place the mod JAR into your server’s `mods/` directory
-3. Start the server once to generate the config file
-4. Edit the config and restart the server
+1. Install **Minecraft Forge 1.20.1 (47.x)** on your server.
+2. Place the mod JAR into the server's `mods/` directory.
+3. Start the server once to generate config files.
+4. Edit the config files as needed.
+5. Run `/serverhelper reload` or restart the server.
 
 ---
 
@@ -87,7 +167,7 @@ config/server_helper_mod-server.toml
 
 - Minecraft **1.20.1**
 - Forge **47.x**
-- Dedicated servers only
+- Dedicated servers
 
 This mod does not add gameplay content and is intended for server administration use.
 
@@ -96,4 +176,3 @@ This mod does not add gameplay content and is intended for server administration
 ## License
 
 MIT License
-
