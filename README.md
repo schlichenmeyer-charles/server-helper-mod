@@ -6,6 +6,15 @@ The mod is intended for dedicated servers and does not require players to instal
 
 ---
 
+## What's New in 1.7.0
+
+- Maintenance mode for keeping non-operators out while the server is being updated or repaired.
+- `/serverhelper status` for quick TPS/MSPT, entity, player, and loaded chunk snapshots.
+- Configurable top-level command aliases such as `/discord` and `/website`.
+- Gradle 8.8 wrapper files for reliable ForgeGradle builds.
+
+---
+
 ## Features
 
 - **Scheduled restarts**
@@ -27,6 +36,9 @@ The mod is intended for dedicated servers and does not require players to instal
   - Check the next scheduled restart.
   - Send test restart warnings.
   - Check the server's local time.
+  - Toggle maintenance mode for non-operator players.
+  - View server and dimension performance snapshots.
+  - Register configurable top-level command aliases.
 
 ---
 
@@ -37,6 +49,8 @@ The mod is intended for dedicated servers and does not require players to instal
 | Command | Description |
 | --- | --- |
 | `/rules` | Shows the configured server rules and helpful links. |
+| `/discord` | Default alias for `/rules`; configurable in `aliases.commands`. |
+| `/website` | Default alias for `/rules`; configurable in `aliases.commands`. |
 | `/banitems list` | Lists currently banned items. |
 
 ### Operator Commands
@@ -44,6 +58,10 @@ The mod is intended for dedicated servers and does not require players to instal
 | Command | Description |
 | --- | --- |
 | `/serverhelper reload` | Reloads config, rules, restart schedule, banned items, and sweeps loaded inventories/containers. |
+| `/serverhelper maintenance status` | Shows whether maintenance mode is enabled. |
+| `/serverhelper maintenance on` | Enables maintenance mode and disconnects non-operators after login. |
+| `/serverhelper maintenance off` | Disables maintenance mode. |
+| `/serverhelper status` | Shows server TPS/MSPT plus per-dimension entity, player, chunk, and MSPT snapshots. |
 | `/serverhelper testwarn <minutes>` | Broadcasts a test restart warning. |
 | `/serverhelper restartstatus` | Shows the next scheduled restart and remaining seconds. |
 | `/serverhelper getlocaltime` | Shows the server's local date/time. |
@@ -107,6 +125,18 @@ config/server_helper_mod_banned_items.json
 
 	# Website URL shown in /rules
 	website_url = "https://yourserver.com"
+
+[maintenance]
+	# When true, non-operator players are disconnected after login.
+	enabled = false
+
+	# Disconnect message shown to non-operator players while maintenance mode is enabled.
+	message = "The server is currently under maintenance. Please try again later."
+
+[aliases]
+	# Command aliases in alias=target format. Do not include leading slashes.
+	# Example: discord=rules
+	commands = ["discord=rules", "website=rules"]
 ```
 
 ### Config Options
@@ -121,8 +151,68 @@ config/server_helper_mod_banned_items.json
 | `rules.rules` | Lines shown by `/rules`. |
 | `rules.discord_url` | Discord link shown by `/rules`; leave blank to hide it. |
 | `rules.website_url` | Website link shown by `/rules`; leave blank to hide it. |
+| `maintenance.enabled` | Enables maintenance mode for non-operator players. |
+| `maintenance.message` | Disconnect message shown while maintenance mode is enabled. |
+| `aliases.commands` | Top-level command aliases in `alias=target command` format. |
 
 All restart times use the server's local timezone.
+
+---
+
+## Maintenance Mode
+
+Maintenance mode is useful when updating mods, changing configs, repairing world data, or testing before reopening the server.
+
+Enable it with:
+
+```text
+/serverhelper maintenance on
+```
+
+Disable it with:
+
+```text
+/serverhelper maintenance off
+```
+
+While enabled, non-operator players are disconnected after login with the configured maintenance message. Operators can still join so they can test and administer the server.
+
+---
+
+## Performance Snapshots
+
+`/serverhelper status` provides a lightweight live snapshot:
+
+- Server TPS and average MSPT.
+- Online player count.
+- Maintenance mode state.
+- Per-dimension MSPT.
+- Per-dimension entity count.
+- Per-dimension player count.
+- Per-dimension loaded chunk count.
+
+This is intended as a quick admin overview. For deep profiling, use a dedicated profiler such as Spark.
+
+---
+
+## Command Aliases
+
+Aliases are configured in `aliases.commands` using `alias=target command` entries:
+
+```toml
+[aliases]
+	commands = [
+		"discord=rules",
+		"website=rules",
+		"restart=serverhelper restartstatus"
+	]
+```
+
+Aliases execute with the caller's normal command permissions. They do not bypass operator checks.
+
+New aliases can be added with `/serverhelper reload`. Removing an alias from the command tree requires a server restart, but removed aliases stop executing after reload.
+
+Reserved command roots such as `serverhelper`, `banitems`, and `rules` are ignored as aliases.
 
 ---
 
@@ -147,6 +237,7 @@ You can edit this file directly and run `/serverhelper reload` or `/banitems rel
 
 - Reloads the Forge common config from disk.
 - Rebakes restart settings, rules, Discord link, and website link.
+- Rebakes maintenance mode settings and command aliases.
 - Resets the restart scheduler using the new values.
 - Reloads `server_helper_mod_banned_items.json`.
 - Sweeps online player inventories, ender chests, open containers, and tracked loaded chunk containers.
@@ -163,11 +254,34 @@ You can edit this file directly and run `/serverhelper reload` or `/banitems rel
 
 ---
 
+## Building From Source
+
+Use the included Gradle wrapper. ForgeGradle does not currently support Gradle 9.x for this project, so do not use a globally installed Gradle 9 build command.
+
+On Windows PowerShell:
+
+```powershell
+$env:JAVA_HOME='C:\Program Files\Eclipse Adoptium\jdk-17.0.17.10-hotspot'
+$env:Path="$env:JAVA_HOME\bin;$env:Path"
+.\gradlew.bat build
+```
+
+On macOS/Linux:
+
+```bash
+./gradlew build
+```
+
+Build output is written under `build/libs/`.
+
+---
+
 ## Compatibility
 
 - Minecraft **1.20.1**
 - Forge **47.x**
 - Dedicated servers
+- Java **17**
 
 This mod does not add gameplay content and is intended for server administration use.
 

@@ -13,8 +13,10 @@ import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.server.ServerLifecycleHooks;
 import org.slf4j.Logger;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Mod.EventBusSubscriber(modid = Server_helper_mod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
@@ -33,6 +35,9 @@ public class Config {
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> RULES;
     private static final ForgeConfigSpec.ConfigValue<String> DISCORD_URL;
     private static final ForgeConfigSpec.ConfigValue<String> WEBSITE_URL;
+    private static final ForgeConfigSpec.BooleanValue MAINTENANCE_ENABLED;
+    private static final ForgeConfigSpec.ConfigValue<String> MAINTENANCE_MESSAGE;
+    private static final ForgeConfigSpec.ConfigValue<List<? extends String>> COMMAND_ALIASES;
 
     static {
         // --- [general] ---
@@ -98,6 +103,32 @@ public class Config {
 
         BUILDER.pop();
 
+        // --- [maintenance] ---
+        BUILDER.push("maintenance");
+
+        MAINTENANCE_ENABLED = BUILDER
+                .comment("When true, non-operator players are disconnected after login.")
+                .define("enabled", false);
+
+        MAINTENANCE_MESSAGE = BUILDER
+                .comment("Disconnect message shown to non-operator players while maintenance mode is enabled.")
+                .define("message", "The server is currently under maintenance. Please try again later.");
+
+        BUILDER.pop();
+
+        // --- [aliases] ---
+        BUILDER.push("aliases");
+
+        COMMAND_ALIASES = BUILDER
+                .comment("Command aliases in alias=target format. Do not include leading slashes. Example: discord=rules")
+                .defineListAllowEmpty(
+                        "commands",
+                        List.of("discord=rules", "website=rules"),
+                        o -> o instanceof String s && s.contains("=")
+                );
+
+        BUILDER.pop();
+
         SPEC = BUILDER.build();
     }
 
@@ -113,6 +144,9 @@ public class Config {
     public static List<String> rules;
     public static String discordUrl;
     public static String websiteUrl;
+    public static boolean maintenanceEnabled;
+    public static String maintenanceMessage;
+    public static Map<String, String> commandAliases;
 
     private static void bake() {
         enableMessages = ENABLE_MESSAGES.get();
@@ -126,11 +160,15 @@ public class Config {
         rules = List.copyOf(RULES.get());
         discordUrl = DISCORD_URL.get().trim();
         websiteUrl = WEBSITE_URL.get().trim();
+
+        maintenanceEnabled = MAINTENANCE_ENABLED.get();
+        maintenanceMessage = MAINTENANCE_MESSAGE.get().trim();
+        commandAliases = parseCommandAliases(COMMAND_ALIASES.get());
     }
 
     private static void logChanges(String reason) {
         LOGGER.info(
-                "[Server Helper Mod] Config {}: enableMessages={}, restartTimes={}, warnMinutes={}, commandToExecute={}, executeAtZero={}, rules={}, discordUrl={}, websiteUrl={}",
+                "[Server Helper Mod] Config {}: enableMessages={}, restartTimes={}, warnMinutes={}, commandToExecute={}, executeAtZero={}, rules={}, discordUrl={}, websiteUrl={}, maintenanceEnabled={}, maintenanceMessage={}, commandAliases={}",
                 reason,
                 enableMessages,
                 restartTimes,
@@ -139,8 +177,32 @@ public class Config {
                 executeAtZero,
                 rules,
                 discordUrl,
-                websiteUrl
+                websiteUrl,
+                maintenanceEnabled,
+                maintenanceMessage,
+                commandAliases
         );
+    }
+
+    private static Map<String, String> parseCommandAliases(List<? extends String> entries) {
+        Map<String, String> aliases = new HashMap<>();
+
+        for (String entry : entries) {
+            String[] parts = entry.split("=", 2);
+            if (parts.length != 2) continue;
+
+            String alias = parts[0].trim().toLowerCase();
+            String target = parts[1].trim();
+            if (!alias.matches("[a-z0-9_]{1,32}") || target.isBlank()) {
+                LOGGER.warn("[Server Helper Mod] Ignoring invalid command alias: {}", entry);
+                continue;
+            }
+
+            if (target.startsWith("/")) target = target.substring(1);
+            aliases.put(alias, target);
+        }
+
+        return Map.copyOf(aliases);
     }
 
     private static void resetSchedulerIfRunning() {
@@ -184,6 +246,13 @@ public class Config {
         bake();
         resetSchedulerIfRunning();
         logChanges(reason);
+    }
+
+    public static void setMaintenanceEnabled(boolean enabled) {
+        MAINTENANCE_ENABLED.set(enabled);
+        MAINTENANCE_ENABLED.save();
+        bake();
+        logChanges("maintenance updated");
     }
 
     public record ReloadResult(boolean loadedFromDisk, String configPath) {}
