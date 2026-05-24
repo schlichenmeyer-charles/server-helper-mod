@@ -1,8 +1,13 @@
 package net.charlesschlich.server_helper_mod;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
+import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.config.ConfigFileTypeHandler;
+import net.minecraftforge.fml.config.ConfigTracker;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.server.ServerLifecycleHooks;
@@ -143,11 +148,45 @@ public class Config {
         if (server != null) RestartScheduler.resetSchedule(server);
     }
 
+    public static ReloadResult reloadFromDisk(String reason) {
+        ModConfig modConfig = ConfigTracker.INSTANCE.fileMap().get(Server_helper_mod.MOD_ID + "-common.toml");
+        boolean loadedFromDisk = false;
+        String configPath = "unknown";
+
+        try {
+            if (modConfig != null && modConfig.getConfigData() != null) {
+                CommentedConfig configData = modConfig.getConfigData();
+
+                if (configData instanceof CommentedFileConfig fileConfig) {
+                    configPath = fileConfig.getNioPath().toString();
+                    fileConfig.load();
+                    if (!SPEC.isCorrect(fileConfig)) {
+                        ConfigFileTypeHandler.backUpConfig(fileConfig);
+                    }
+                    SPEC.acceptConfig(fileConfig);
+                    loadedFromDisk = true;
+                } else {
+                    SPEC.acceptConfig(configData);
+                }
+            }
+
+            bake();
+            resetSchedulerIfRunning();
+            logChanges(reason);
+            return new ReloadResult(loadedFromDisk, configPath);
+        } catch (Exception e) {
+            LOGGER.error("[Server Helper Mod] Failed to reload config from disk", e);
+            throw new IllegalStateException("Failed to reload Server Helper config", e);
+        }
+    }
+
     public static void reloadForCommonConfig(String reason) {
         bake();
         resetSchedulerIfRunning();
         logChanges(reason);
     }
+
+    public record ReloadResult(boolean loadedFromDisk, String configPath) {}
 
     @SubscribeEvent
     static void onLoad(final ModConfigEvent.Loading event) {

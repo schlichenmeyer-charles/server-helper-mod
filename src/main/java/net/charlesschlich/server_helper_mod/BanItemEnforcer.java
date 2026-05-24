@@ -23,9 +23,12 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Mod.EventBusSubscriber(modid = Server_helper_mod.MOD_ID)
 public class BanItemEnforcer {
+    private static final Set<LevelChunk> LOADED_CHUNKS = ConcurrentHashMap.newKeySet();
 
     @SubscribeEvent
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
@@ -82,7 +85,15 @@ public class BanItemEnforcer {
     @SubscribeEvent
     public static void onChunkLoad(ChunkEvent.Load event) {
         if (!(event.getChunk() instanceof LevelChunk chunk)) return;
+        LOADED_CHUNKS.add(chunk);
         purgeChunkContainers(chunk);
+    }
+
+    @SubscribeEvent
+    public static void onChunkUnload(ChunkEvent.Unload event) {
+        if (event.getChunk() instanceof LevelChunk chunk) {
+            LOADED_CHUNKS.remove(chunk);
+        }
     }
 
     @SubscribeEvent
@@ -109,14 +120,21 @@ public class BanItemEnforcer {
         }
     }
 
-    public static void sweepServer(MinecraftServer server) {
-        if (server == null) return;
+    public static SweepStats sweepServer(MinecraftServer server) {
+        if (server == null) return new SweepStats(0, 0, 0, 0);
+
+        int playersSwept = 0;
+        int playerStacksRemoved = 0;
+        int chunksSwept = 0;
+        int containerStacksRemoved = 0;
 
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            playersSwept++;
             int removedInventory = purgePlayerInventory(player);
             int removedEnder = purgeEnderChest(player);
             int removedOpenMenu = purgeOpenContainer(player);
             int total = removedInventory + removedEnder + removedOpenMenu;
+            playerStacksRemoved += total;
 
             if (total > 0) {
                 player.inventoryMenu.broadcastChanges();
@@ -127,6 +145,15 @@ public class BanItemEnforcer {
                 );
             }
         }
+
+        for (LevelChunk chunk : LOADED_CHUNKS) {
+            if (chunk.getLevel().isClientSide()) continue;
+
+            chunksSwept++;
+            containerStacksRemoved += purgeChunkContainers(chunk);
+        }
+
+        return new SweepStats(playersSwept, playerStacksRemoved, chunksSwept, containerStacksRemoved);
     }
 
     private static int purgePlayerInventory(ServerPlayer player) {
@@ -225,17 +252,22 @@ public class BanItemEnforcer {
         return removed;
     }
 
-    private static void purgeChunkContainers(LevelChunk chunk) {
+    private static int purgeChunkContainers(LevelChunk chunk) {
+        int removedStacks = 0;
+
         for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
             if (!(blockEntity instanceof Container container)) continue;
 
             boolean automationContainer = isAutomationContainer(blockEntity);
             int removed = purgeContainer(container, automationContainer);
+            removedStacks += removed;
 
             if (removed > 0) {
                 blockEntity.setChanged();
             }
         }
+
+        return removedStacks;
     }
 
     private static int purgeContainer(Container container, boolean automationContainer) {
@@ -277,5 +309,16 @@ public class BanItemEnforcer {
                 || item instanceof HangingEntityItem
                 || item instanceof ArmorStandItem
                 || item instanceof EndCrystalItem;
+    }
+
+    public record SweepStats(
+            int playersSwept,
+            int playerStacksRemoved,
+            int chunksSwept,
+            int containerStacksRemoved
+    ) {
+        public int totalStacksRemoved() {
+            return playerStacksRemoved + containerStacksRemoved;
+        }
     }
 }

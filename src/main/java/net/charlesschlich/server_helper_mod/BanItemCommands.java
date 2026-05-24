@@ -36,9 +36,13 @@ public class BanItemCommands {
                                 .requires(src -> src.hasPermission(2))
                                 .executes(ctx -> {
                                     BanItemManager.load();
-                                    BanItemEnforcer.sweepServer(ctx.getSource().getServer());
+                                    BanItemEnforcer.SweepStats sweepStats = BanItemEnforcer.sweepServer(ctx.getSource().getServer());
                                     ctx.getSource().sendSuccess(
-                                            () -> Component.literal("Reloaded banned items and swept loaded inventories/containers.")
+                                            () -> Component.literal(
+                                                            "Reloaded banned items. Swept players=" + sweepStats.playersSwept()
+                                                                    + ", chunks=" + sweepStats.chunksSwept()
+                                                                    + ", removed stacks=" + sweepStats.totalStacksRemoved()
+                                                    )
                                                     .withStyle(ChatFormatting.GREEN),
                                             false
                                     );

@@ -33,21 +33,35 @@ public class ServerHelperCommands {
                                 .executes(ctx -> {
                                     CommandSourceStack src = ctx.getSource();
 
-                                    Config.reloadForCommonConfig("reloaded (command)");
-                                    BanItemManager.load();
-                                    BanItemEnforcer.sweepServer(src.getServer());
+                                    Config.ReloadResult configReload;
+                                    BanItemEnforcer.SweepStats sweepStats;
+
+                                    try {
+                                        configReload = Config.reloadFromDisk("reloaded (command)");
+                                        BanItemManager.load();
+                                        sweepStats = BanItemEnforcer.sweepServer(src.getServer());
+                                    } catch (Exception e) {
+                                        src.sendFailure(Component.literal(
+                                                "Server Helper reload failed. Check the server log for details."
+                                        ).withStyle(ChatFormatting.RED));
+                                        return 0;
+                                    }
 
                                     src.sendSuccess(() -> Component.literal(
-                                            "Reloaded config and banned items."
+                                            "Reloaded Server Helper config, rules, restart schedule, and banned items."
                                     ).withStyle(ChatFormatting.GREEN), false);
 
                                     src.sendSuccess(() -> Component.literal(
-                                            "Restart times=" + Config.restartTimes + ", warn=" + Config.warnMinutes
+                                            "Config source=" + (configReload.loadedFromDisk() ? configReload.configPath() : "in-memory")
+                                                    + ", restart times=" + Config.restartTimes + ", warn=" + Config.warnMinutes
                                     ).withStyle(ChatFormatting.GRAY), false);
 
                                     src.sendSuccess(() -> Component.literal(
                                             "Rules loaded=" + (Config.rules != null ? Config.rules.size() : 0)
                                                     + ", banned items loaded=" + BanItemManager.getAllBans().size()
+                                                    + ", swept players=" + sweepStats.playersSwept()
+                                                    + ", swept chunks=" + sweepStats.chunksSwept()
+                                                    + ", removed stacks=" + sweepStats.totalStacksRemoved()
                                     ).withStyle(ChatFormatting.AQUA), false);
 
                                     return 1;
