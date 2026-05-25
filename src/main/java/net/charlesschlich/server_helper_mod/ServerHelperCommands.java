@@ -263,7 +263,7 @@ public class ServerHelperCommands {
     }
 
     private static boolean isReservedAlias(String alias) {
-        return alias.equals("serverhelper") || alias.equals("banitems") || alias.equals("rules");
+        return alias.equals("serverhelper") || alias.equals("banitems") || alias.equals("rules") || alias.equals("afk");
     }
 
     private static void resendCommandTrees(MinecraftServer server) {

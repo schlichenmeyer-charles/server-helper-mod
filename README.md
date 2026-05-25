@@ -26,6 +26,12 @@ The mod is intended for dedicated servers and does not require players to instal
   - Players can run `/rules` to view configured server rules.
   - Optional Discord and website links are shown as clickable chat links.
 
+- **AFK status**
+  - Players can run `/afk` to announce that they are away.
+  - AFK players are marked with `[AFK]` in the tab menu.
+  - Players are automatically marked AFK after 10 minutes without activity.
+  - Moving, chatting, interacting with an entity, or running `/afk` again clears AFK status.
+
 - **Banned item management**
   - Add, remove, reload, and list banned items in-game.
   - Soft bans block placement/deployment behavior and remove soft-banned items from automation containers such as dispensers and droppers.
@@ -49,6 +55,7 @@ The mod is intended for dedicated servers and does not require players to instal
 | Command | Description |
 | --- | --- |
 | `/rules` | Shows the configured server rules and helpful links. |
+| `/afk` | Toggles your AFK status and broadcasts the change to online players. |
 | `/discord` | Default alias for `/rules`; configurable in `aliases.commands`. |
 | `/website` | Default alias for `/rules`; configurable in `aliases.commands`. |
 | `/banitems list` | Lists currently banned items. |
@@ -213,6 +220,22 @@ Aliases execute with the caller's normal command permissions. They do not bypass
 New aliases can be added with `/serverhelper reload`. Removing an alias from the command tree requires a server restart, but removed aliases stop executing after reload.
 
 Reserved command roots such as `serverhelper`, `banitems`, and `rules` are ignored as aliases.
+
+`afk` is also reserved because it is a built-in player command.
+
+---
+
+## AFK Status
+
+Players can run:
+
+```text
+/afk
+```
+
+When a player becomes AFK, the server broadcasts a chat message and shows `[AFK]` next to the player's name in the tab menu. The tab-list marker is applied through Forge's tab-list name formatting event and preserves the existing display name component, which helps it cooperate with name/chat formatting mods such as Better Forge Chat Reborn.
+
+Players automatically become AFK after 10 minutes without activity. Moving, chatting, interacting with an entity, or running `/afk` again removes AFK status and broadcasts that the player has returned.
 
 ---
 
