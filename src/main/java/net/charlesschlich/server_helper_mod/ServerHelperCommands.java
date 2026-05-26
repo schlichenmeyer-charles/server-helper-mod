@@ -52,7 +52,7 @@ public class ServerHelperCommands {
     private static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
                 Commands.literal("serverhelper")
-                        .requires(src -> src.hasPermission(2))
+                        .requires(ServerHelperPermissions::canUseStaffTools)
                         .then(Commands.literal("reload")
                                 .executes(ctx -> reloadServerHelper(ctx.getSource()))
                         )
@@ -144,6 +144,7 @@ public class ServerHelperCommands {
         try {
             configReload = Config.reloadFromDisk("reloaded (command)");
             BanItemManager.load();
+            SeenManager.load();
             sweepStats = BanItemEnforcer.sweepServer(src.getServer());
             registerConfiguredAliases(src.getServer().getCommands().getDispatcher());
             resendCommandTrees(src.getServer());
@@ -155,7 +156,7 @@ public class ServerHelperCommands {
         }
 
         src.sendSuccess(() -> Component.literal(
-                "Reloaded Server Helper config, rules, restart schedule, aliases, and banned items."
+                "Reloaded Server Helper config, rules, restart schedule, aliases, seen data, and banned items."
         ).withStyle(ChatFormatting.GREEN), false);
 
         src.sendSuccess(() -> Component.literal(
@@ -166,6 +167,7 @@ public class ServerHelperCommands {
         src.sendSuccess(() -> Component.literal(
                 "Rules loaded=" + (Config.rules != null ? Config.rules.size() : 0)
                         + ", aliases loaded=" + (Config.commandAliases != null ? Config.commandAliases.size() : 0)
+                        + ", seen players loaded=" + SeenManager.getKnownNames(src.getServer()).size()
                         + ", banned items loaded=" + BanItemManager.getAllBans().size()
                         + ", swept players=" + sweepStats.playersSwept()
                         + ", swept chunks=" + sweepStats.chunksSwept()
@@ -263,7 +265,13 @@ public class ServerHelperCommands {
     }
 
     private static boolean isReservedAlias(String alias) {
-        return alias.equals("serverhelper") || alias.equals("banitems") || alias.equals("rules") || alias.equals("afk");
+        return alias.equals("serverhelper")
+                || alias.equals("banitems")
+                || alias.equals("rules")
+                || alias.equals("afk")
+                || alias.equals("seen")
+                || alias.equals("staff")
+                || alias.equals("vanish");
     }
 
     private static void resendCommandTrees(MinecraftServer server) {

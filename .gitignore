@@ -3,6 +3,9 @@
 /build/
 /build/classes/java/main/
 /.idea/
-/run/
+run/
 
 bin/
+run/options.txt
+run/logs/debug.log
+run/logs/latest.log

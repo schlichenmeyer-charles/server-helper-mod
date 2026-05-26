@@ -6,12 +6,15 @@ The mod is intended for dedicated servers and does not require players to instal
 
 ---
 
-## What's New in 1.7.0
+## What's New in 1.8.0
 
+- `/afk` player status with auto-AFK after 10 minutes of inactivity.
+- `/seen` admin lookup for last-known player activity and location.
+- `/staff` online staff list with AFK and vanish awareness.
+- `/vanish` operator tool for tab-list hiding and no-particle invisibility.
 - Maintenance mode for keeping non-operators out while the server is being updated or repaired.
 - `/serverhelper status` for quick TPS/MSPT, entity, player, and loaded chunk snapshots.
 - Configurable top-level command aliases such as `/discord` and `/website`.
-- Gradle 8.8 wrapper files for reliable ForgeGradle builds.
 
 ---
 
@@ -31,6 +34,12 @@ The mod is intended for dedicated servers and does not require players to instal
   - AFK players are marked with `[AFK]` in the tab menu.
   - Players are automatically marked AFK after 10 minutes without activity.
   - Moving, chatting, interacting with an entity, or running `/afk` again clears AFK status.
+
+- **Staff presence tools**
+  - Players can run `/staff` to see online staff members.
+  - Staff can run `/seen <player>` to view last-known player activity and location.
+  - Staff can run `/vanish` to hide from non-staff tab lists and gain no-particle invisibility.
+  - Staff membership is controlled by the Forge permission node `server_helper_mod.staff`, with vanilla operators allowed by default.
 
 - **Banned item management**
   - Add, remove, reload, and list banned items in-game.
@@ -56,6 +65,7 @@ The mod is intended for dedicated servers and does not require players to instal
 | --- | --- |
 | `/rules` | Shows the configured server rules and helpful links. |
 | `/afk` | Toggles your AFK status and broadcasts the change to online players. |
+| `/staff` | Lists online staff members. Vanished staff are hidden from non-staff players. |
 | `/discord` | Default alias for `/rules`; configurable in `aliases.commands`. |
 | `/website` | Default alias for `/rules`; configurable in `aliases.commands`. |
 | `/banitems list` | Lists currently banned items. |
@@ -72,6 +82,8 @@ The mod is intended for dedicated servers and does not require players to instal
 | `/serverhelper testwarn <minutes>` | Broadcasts a test restart warning. |
 | `/serverhelper restartstatus` | Shows the next scheduled restart and remaining seconds. |
 | `/serverhelper getlocaltime` | Shows the server's local date/time. |
+| `/seen <player>` | Shows whether a player is online or when and where they were last seen. Requires `server_helper_mod.staff` or operator permissions. |
+| `/vanish` | Toggles vanish for the executing staff member. Requires `server_helper_mod.staff` or operator permissions. |
 | `/banitems reload` | Reloads the banned item file and sweeps loaded inventories/containers. |
 | `/banitems hardban hand` | Hard-bans the item currently held in your main hand. |
 | `/banitems hardban <item>` | Hard-bans an item by registry ID, such as `minecraft:bedrock`. |
@@ -79,6 +91,8 @@ The mod is intended for dedicated servers and does not require players to instal
 | `/banitems softban <item>` | Soft-bans an item by registry ID. |
 | `/banitems unban hand` | Removes the ban for the item currently held in your main hand. |
 | `/banitems unban <item>` | Removes a ban by registry ID. |
+
+`/serverhelper *`, `/seen`, and `/vanish` require `server_helper_mod.staff` or vanilla operator permissions.
 
 ---
 
@@ -94,6 +108,12 @@ Banned items are stored separately at:
 
 ```text
 config/server_helper_mod_banned_items.json
+```
+
+Seen player data is stored separately at:
+
+```text
+config/server_helper_mod_seen_players.json
 ```
 
 ### Example Config
@@ -221,7 +241,7 @@ New aliases can be added with `/serverhelper reload`. Removing an alias from the
 
 Reserved command roots such as `serverhelper`, `banitems`, and `rules` are ignored as aliases.
 
-`afk` is also reserved because it is a built-in player command.
+`afk`, `seen`, `staff`, and `vanish` are also reserved because they are built-in commands.
 
 ---
 
@@ -236,6 +256,24 @@ Players can run:
 When a player becomes AFK, the server broadcasts a chat message and shows `[AFK]` next to the player's name in the tab menu. The tab-list marker is applied through Forge's tab-list name formatting event and preserves the existing display name component, which helps it cooperate with name/chat formatting mods such as Better Forge Chat Reborn.
 
 Players automatically become AFK after 10 minutes without activity. Moving, chatting, interacting with an entity, or running `/afk` again removes AFK status and broadcasts that the player has returned.
+
+---
+
+## Staff Tools
+
+`/staff` lists online players who have the `server_helper_mod.staff` permission. Vanilla operators are treated as staff by default, and LuckPerms can grant or deny the node directly.
+
+Example LuckPerms command:
+
+```text
+/lp user <player> permission set server_helper_mod.staff true
+```
+
+Players without staff permission do not see vanished staff in `/staff`, while staff can see vanished staff marked with `[VANISHED]`.
+
+`/seen <player>` requires `server_helper_mod.staff` or vanilla operator permissions and shows whether a player is online. For online players, it reports their current dimension, coordinates, AFK status, and vanish status. For offline players, it reports the last stored logout time, last login time, and last-known location from `server_helper_mod_seen_players.json`.
+
+`/vanish` requires `server_helper_mod.staff` or vanilla operator permissions. It hides the vanished staff member from non-staff tab lists and applies no-particle invisibility. Other staff are notified when a staff member toggles vanish.
 
 ---
 
@@ -263,6 +301,7 @@ You can edit this file directly and run `/serverhelper reload` or `/banitems rel
 - Rebakes maintenance mode settings and command aliases.
 - Resets the restart scheduler using the new values.
 - Reloads `server_helper_mod_banned_items.json`.
+- Reloads `server_helper_mod_seen_players.json`.
 - Sweeps online player inventories, ender chests, open containers, and tracked loaded chunk containers.
 
 ---
