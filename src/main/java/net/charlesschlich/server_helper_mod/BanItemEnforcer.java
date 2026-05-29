@@ -13,8 +13,10 @@ import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.DispenserBlockEntity;
 import net.minecraft.world.level.block.entity.DropperBlockEntity;
+import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -22,13 +24,16 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Mod.EventBusSubscriber(modid = Server_helper_mod.MOD_ID)
 public class BanItemEnforcer {
+    private static final int MAX_CHUNK_PURGES_PER_TICK = 2;
     private static final Set<LevelChunk> LOADED_CHUNKS = ConcurrentHashMap.newKeySet();
+    private static final Set<LevelChunk> PENDING_CHUNK_PURGES = ConcurrentHashMap.newKeySet();
 
     @SubscribeEvent
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
@@ -86,13 +91,52 @@ public class BanItemEnforcer {
     public static void onChunkLoad(ChunkEvent.Load event) {
         if (!(event.getChunk() instanceof LevelChunk chunk)) return;
         LOADED_CHUNKS.add(chunk);
-        purgeChunkContainers(chunk);
+        if (BanItemManager.hasBans()) {
+            PENDING_CHUNK_PURGES.add(chunk);
+        }
     }
 
     @SubscribeEvent
     public static void onChunkUnload(ChunkEvent.Unload event) {
         if (event.getChunk() instanceof LevelChunk chunk) {
             LOADED_CHUNKS.remove(chunk);
+            PENDING_CHUNK_PURGES.remove(chunk);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onServerTick(TickEvent.ServerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
+        if (!BanItemManager.hasBans()) {
+            PENDING_CHUNK_PURGES.clear();
+            return;
+        }
+
+        int purgedChunks = 0;
+        Iterator<LevelChunk> iterator = PENDING_CHUNK_PURGES.iterator();
+        while (iterator.hasNext() && purgedChunks < MAX_CHUNK_PURGES_PER_TICK && event.haveTime()) {
+            LevelChunk chunk = iterator.next();
+            iterator.remove();
+
+            if (chunk.getLevel().isClientSide()) continue;
+            if (!LOADED_CHUNKS.contains(chunk)) continue;
+
+            purgeChunkContainers(chunk);
+            purgedChunks++;
+        }
+    }
+
+    @SubscribeEvent
+    public static void onContainerOpen(PlayerContainerEvent.Open event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+
+        int removed = purgeOpenContainer(player);
+        if (removed > 0) {
+            player.containerMenu.broadcastChanges();
+            player.sendSystemMessage(
+                    Component.literal("Removed " + removed + " banned item stack(s).")
+                            .withStyle(ChatFormatting.RED)
+            );
         }
     }
 
@@ -257,6 +301,7 @@ public class BanItemEnforcer {
 
         for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
             if (!(blockEntity instanceof Container container)) continue;
+            if (hasPendingLootTable(blockEntity)) continue;
 
             boolean automationContainer = isAutomationContainer(blockEntity);
             int removed = purgeContainer(container, automationContainer);
@@ -268,6 +313,11 @@ public class BanItemEnforcer {
         }
 
         return removedStacks;
+    }
+
+    private static boolean hasPendingLootTable(BlockEntity blockEntity) {
+        return blockEntity instanceof RandomizableContainerBlockEntity
+                && blockEntity.saveWithoutMetadata().contains("LootTable", 8);
     }
 
     private static int purgeContainer(Container container, boolean automationContainer) {

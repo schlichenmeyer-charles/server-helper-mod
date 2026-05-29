@@ -120,6 +120,10 @@ public class BanItemManager {
         return getBanType(item) == BanType.HARD;
     }
 
+    public static boolean hasBans() {
+        return !BANNED_ITEMS.isEmpty();
+    }
+
     public static Map<ResourceLocation, BanType> getAllBans() {
         return Collections.unmodifiableMap(new TreeMap<>(BANNED_ITEMS));
     }
