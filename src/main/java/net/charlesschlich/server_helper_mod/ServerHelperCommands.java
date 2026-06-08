@@ -70,6 +70,17 @@ public class ServerHelperCommands {
                         .then(Commands.literal("status")
                                 .executes(ctx -> showStatus(ctx.getSource()))
                         )
+                        .then(Commands.literal("ftbchunks")
+                                .then(Commands.literal("status")
+                                        .executes(ctx -> showFtbChunksStatus(ctx.getSource()))
+                                )
+                                .then(Commands.literal("unloadinactive")
+                                        .executes(ctx -> unloadInactiveFtbChunks(ctx.getSource()))
+                                )
+                                .then(Commands.literal("unloadall")
+                                        .executes(ctx -> unloadAllFtbChunks(ctx.getSource()))
+                                )
+                        )
                         .then(Commands.literal("testwarn")
                                 .then(Commands.argument("minutes", IntegerArgumentType.integer(0, 1440))
                                         .executes(ctx -> {
@@ -238,6 +249,64 @@ public class ServerHelperCommands {
         }
 
         return 1;
+    }
+
+    private static int showFtbChunksStatus(CommandSourceStack src) {
+        var result = FtbChunksForceLoadManager.forceLoadedStatus();
+        if (!result.active()) {
+            src.sendFailure(Component.literal(result.message()).withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
+        src.sendSuccess(() -> Component.literal(
+                "FTB Chunks integration: automatic cleanup="
+                        + (Config.ftbChunksUnloadInactiveEnabled ? "enabled" : "disabled")
+                        + ", inactive days=" + Config.ftbChunksInactiveDays
+                        + ", check interval=" + Config.ftbChunksCheckIntervalMinutes + " minute(s)"
+        ).withStyle(ChatFormatting.GRAY), false);
+
+        src.sendSuccess(() -> Component.literal(
+                "Currently force-loaded: " + result.forceLoadedChunks()
+                        + " chunk(s) across " + result.activeTeams() + " team(s)."
+        ).withStyle(ChatFormatting.AQUA), false);
+        return 1;
+    }
+
+    private static int unloadInactiveFtbChunks(CommandSourceStack src) {
+        var result = FtbChunksForceLoadManager.unloadInactiveForceLoadedChunks(src);
+        return sendFtbCleanupResult(src, result, "inactive");
+    }
+
+    private static int unloadAllFtbChunks(CommandSourceStack src) {
+        var result = FtbChunksForceLoadManager.unloadAllForceLoadedChunks(src);
+        return sendFtbCleanupResult(src, result, "all");
+    }
+
+    private static int sendFtbCleanupResult(
+            CommandSourceStack src,
+            FtbChunksForceLoadManager.CleanupResult result,
+            String scope
+    ) {
+        if (!result.active()) {
+            src.sendFailure(Component.literal(result.message()).withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
+        ChatFormatting color = result.failures() == 0 ? ChatFormatting.GREEN : ChatFormatting.YELLOW;
+        src.sendSuccess(() -> Component.literal(
+                "FTB Chunks " + scope + " cleanup complete: found "
+                        + result.forceLoadedChunks() + " force-loaded chunk(s), unloaded "
+                        + result.unloadedChunks() + ", failures " + result.failures() + "."
+        ).withStyle(color), true);
+
+        if (scope.equals("inactive")) {
+            src.sendSuccess(() -> Component.literal(
+                    "Inactive teams cleaned: " + result.inactiveTeams()
+                            + "; active teams retained: " + result.activeTeams() + "."
+            ).withStyle(ChatFormatting.GRAY), false);
+        }
+
+        return result.failures() == 0 ? 1 : 0;
     }
 
     private static int executeAlias(CommandSourceStack src, String alias) {

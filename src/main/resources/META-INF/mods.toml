@@ -61,3 +61,21 @@ mandatory = true
 versionRange = "${minecraft_version_range}"
 ordering = "NONE"
 side = "BOTH"
+[[dependencies."${mod_id}"]]
+modId = "ftblibrary"
+mandatory = false
+versionRange = "[2001,)"
+ordering = "AFTER"
+side = "BOTH"
+[[dependencies."${mod_id}"]]
+modId = "ftbteams"
+mandatory = false
+versionRange = "[2001,)"
+ordering = "AFTER"
+side = "BOTH"
+[[dependencies."${mod_id}"]]
+modId = "ftbchunks"
+mandatory = false
+versionRange = "[2001,)"
+ordering = "AFTER"
+side = "BOTH"

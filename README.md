@@ -6,15 +6,12 @@ The mod is intended for dedicated servers and does not require players to instal
 
 ---
 
-## What's New in 1.8.0
+## What's New in 1.10.0
 
-- `/afk` player status with auto-AFK after 10 minutes of inactivity.
-- `/seen` admin lookup for last-known player activity and location.
-- `/staff` online staff list with AFK and vanish awareness.
-- `/vanish` operator tool for tab-list hiding and no-particle invisibility.
-- Maintenance mode for keeping non-operators out while the server is being updated or repaired.
-- `/serverhelper status` for quick TPS/MSPT, entity, player, and loaded chunk snapshots.
-- Configurable top-level command aliases such as `/discord` and `/website`.
+- Optional FTB Chunks integration that removes force-loading from teams with no login activity for 7 days by default.
+- Automatic checks at server startup and on a configurable interval.
+- `/serverhelper ftbchunks unloadall` to remove every FTB Chunks force-load while preserving claims.
+- No hard dependency: the rest of Server Helper works normally without FTB Chunks, FTB Teams, or FTB Library.
 
 ---
 
@@ -55,6 +52,12 @@ The mod is intended for dedicated servers and does not require players to instal
   - View server and dimension performance snapshots.
   - Register configurable top-level command aliases.
 
+- **Optional FTB Chunks cleanup**
+  - Keeps FTB chunk claims intact while removing force-loading from inactive teams.
+  - Uses FTB Chunks' team-level last-login data.
+  - Runs at server startup and on a configurable interval.
+  - Remains inactive when the required FTB mods are not installed.
+
 ---
 
 ## Commands
@@ -79,6 +82,9 @@ The mod is intended for dedicated servers and does not require players to instal
 | `/serverhelper maintenance on` | Enables maintenance mode and disconnects non-operators after login. |
 | `/serverhelper maintenance off` | Disables maintenance mode. |
 | `/serverhelper status` | Shows server TPS/MSPT plus per-dimension entity, player, chunk, and MSPT snapshots. |
+| `/serverhelper ftbchunks status` | Shows whether the optional integration is active and how many chunks are force-loaded. |
+| `/serverhelper ftbchunks unloadinactive` | Immediately runs the configured inactive-team cleanup. |
+| `/serverhelper ftbchunks unloadall` | Removes force-loading from every FTB Chunks chunk on the server while preserving claims. |
 | `/serverhelper testwarn <minutes>` | Broadcasts a test restart warning. |
 | `/serverhelper restartstatus` | Shows the next scheduled restart and remaining seconds. |
 | `/serverhelper getlocaltime` | Shows the server's local date/time. |
@@ -164,6 +170,17 @@ config/server_helper_mod_seen_players.json
 	# Command aliases in alias=target format. Do not include leading slashes.
 	# Example: discord=rules
 	commands = ["discord=rules", "website=rules"]
+
+[ftb_chunks]
+	# Remove force-loading from FTB teams that have been inactive for the configured number of days.
+	# Ignored when FTB Chunks/Teams/Library are not installed.
+	unload_inactive_enabled = true
+
+	# Real-world days since the owning team last had a member log in.
+	inactive_days = 7
+
+	# Minutes between automatic checks after startup.
+	check_interval_minutes = 60
 ```
 
 ### Config Options
@@ -181,8 +198,27 @@ config/server_helper_mod_seen_players.json
 | `maintenance.enabled` | Enables maintenance mode for non-operator players. |
 | `maintenance.message` | Disconnect message shown while maintenance mode is enabled. |
 | `aliases.commands` | Top-level command aliases in `alias=target command` format. |
+| `ftb_chunks.unload_inactive_enabled` | Enables automatic inactive-team force-load cleanup when the FTB mods are present. |
+| `ftb_chunks.inactive_days` | Number of real-world inactive days before a team's chunks stop being force-loaded. |
+| `ftb_chunks.check_interval_minutes` | Minutes between automatic cleanup checks. |
 
 All restart times use the server's local timezone.
+
+---
+
+## FTB Chunks Integration
+
+The integration requires FTB Chunks, FTB Teams, and FTB Library. They remain optional dependencies; without them, Server Helper logs that the integration is inactive and all other features continue working.
+
+Automatic cleanup uses the last-login timestamp maintained by FTB Chunks for the chunk-owning team. Once that timestamp is older than `ftb_chunks.inactive_days`, the team's force-loaded chunks are unloaded and saved as normal FTB claim data. The chunks remain claimed.
+
+To remove every FTB Chunks force-load immediately:
+
+```text
+/serverhelper ftbchunks unloadall
+```
+
+This command is independent of `unload_inactive_enabled`, so operators can use it even when automatic cleanup is disabled.
 
 ---
 
@@ -344,6 +380,7 @@ Build output is written under `build/libs/`.
 - Forge **47.x**
 - Dedicated servers
 - Java **17**
+- Optional support for FTB Chunks/Teams/Library **2001.x** on Minecraft 1.20.1
 
 This mod does not add gameplay content and is intended for server administration use.
 

@@ -38,6 +38,9 @@ public class Config {
     private static final ForgeConfigSpec.BooleanValue MAINTENANCE_ENABLED;
     private static final ForgeConfigSpec.ConfigValue<String> MAINTENANCE_MESSAGE;
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> COMMAND_ALIASES;
+    private static final ForgeConfigSpec.BooleanValue FTB_CHUNKS_UNLOAD_INACTIVE_ENABLED;
+    private static final ForgeConfigSpec.IntValue FTB_CHUNKS_INACTIVE_DAYS;
+    private static final ForgeConfigSpec.IntValue FTB_CHUNKS_CHECK_INTERVAL_MINUTES;
 
     static {
         // --- [general] ---
@@ -129,6 +132,23 @@ public class Config {
 
         BUILDER.pop();
 
+        // --- [ftb_chunks] ---
+        BUILDER.push("ftb_chunks");
+
+        FTB_CHUNKS_UNLOAD_INACTIVE_ENABLED = BUILDER
+                .comment("When true, Server Helper will remove FTB Chunks force-loading from teams that have been inactive for the configured number of days. This is ignored if FTB Chunks/Teams are not installed.")
+                .define("unload_inactive_enabled", true);
+
+        FTB_CHUNKS_INACTIVE_DAYS = BUILDER
+                .comment("Real-world days since the owning FTB team last had a member log in before its force-loaded chunks are no longer force-loaded.")
+                .defineInRange("inactive_days", 7, 1, 3650);
+
+        FTB_CHUNKS_CHECK_INTERVAL_MINUTES = BUILDER
+                .comment("How often to check FTB Chunks force-loaded chunks after startup. Manual commands can still be run at any time.")
+                .defineInRange("check_interval_minutes", 60, 5, 1440);
+
+        BUILDER.pop();
+
         SPEC = BUILDER.build();
     }
 
@@ -147,6 +167,9 @@ public class Config {
     public static boolean maintenanceEnabled;
     public static String maintenanceMessage;
     public static Map<String, String> commandAliases;
+    public static boolean ftbChunksUnloadInactiveEnabled;
+    public static int ftbChunksInactiveDays;
+    public static int ftbChunksCheckIntervalMinutes;
 
     private static void bake() {
         enableMessages = ENABLE_MESSAGES.get();
@@ -164,11 +187,15 @@ public class Config {
         maintenanceEnabled = MAINTENANCE_ENABLED.get();
         maintenanceMessage = MAINTENANCE_MESSAGE.get().trim();
         commandAliases = parseCommandAliases(COMMAND_ALIASES.get());
+
+        ftbChunksUnloadInactiveEnabled = FTB_CHUNKS_UNLOAD_INACTIVE_ENABLED.get();
+        ftbChunksInactiveDays = FTB_CHUNKS_INACTIVE_DAYS.get();
+        ftbChunksCheckIntervalMinutes = FTB_CHUNKS_CHECK_INTERVAL_MINUTES.get();
     }
 
     private static void logChanges(String reason) {
         LOGGER.info(
-                "[Server Helper Mod] Config {}: enableMessages={}, restartTimes={}, warnMinutes={}, commandToExecute={}, executeAtZero={}, rules={}, discordUrl={}, websiteUrl={}, maintenanceEnabled={}, maintenanceMessage={}, commandAliases={}",
+                "[Server Helper Mod] Config {}: enableMessages={}, restartTimes={}, warnMinutes={}, commandToExecute={}, executeAtZero={}, rules={}, discordUrl={}, websiteUrl={}, maintenanceEnabled={}, maintenanceMessage={}, commandAliases={}, ftbChunksUnloadInactiveEnabled={}, ftbChunksInactiveDays={}, ftbChunksCheckIntervalMinutes={}",
                 reason,
                 enableMessages,
                 restartTimes,
@@ -180,7 +207,10 @@ public class Config {
                 websiteUrl,
                 maintenanceEnabled,
                 maintenanceMessage,
-                commandAliases
+                commandAliases,
+                ftbChunksUnloadInactiveEnabled,
+                ftbChunksInactiveDays,
+                ftbChunksCheckIntervalMinutes
         );
     }
 
@@ -207,7 +237,10 @@ public class Config {
 
     private static void resetSchedulerIfRunning() {
         var server = ServerLifecycleHooks.getCurrentServer();
-        if (server != null) RestartScheduler.resetSchedule(server);
+        if (server != null) {
+            RestartScheduler.resetSchedule(server);
+            FtbChunksForceLoadManager.resetSchedule();
+        }
     }
 
     public static ReloadResult reloadFromDisk(String reason) {
