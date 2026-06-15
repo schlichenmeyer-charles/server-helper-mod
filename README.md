@@ -36,6 +36,7 @@ The mod is intended for dedicated servers and does not require players to instal
   - Players can run `/staff` to see online staff members.
   - Staff can run `/seen <player>` to view last-known player activity and location.
   - Staff can run `/vanish` to hide from non-staff tab lists and gain no-particle invisibility.
+  - Staff can run `/enchant <enchantment>` and `/repair` on their held item.
   - Staff membership is controlled by the Forge permission node `server_helper_mod.staff`, with vanilla operators allowed by default.
 
 - **Banned item management**
@@ -90,6 +91,8 @@ The mod is intended for dedicated servers and does not require players to instal
 | `/serverhelper getlocaltime` | Shows the server's local date/time. |
 | `/seen <player>` | Shows whether a player is online or when and where they were last seen. Requires `server_helper_mod.staff` or operator permissions. |
 | `/vanish` | Toggles vanish for the executing staff member. Requires `server_helper_mod.staff` or operator permissions. |
+| `/enchant <enchantment>` | Applies the requested enchantment at its maximum level to the item in your main hand. Requires `server_helper_mod.staff` or operator permissions. |
+| `/repair` | Fully repairs the item in your main hand. Requires `server_helper_mod.staff` or operator permissions. |
 | `/banitems reload` | Reloads the banned item file and sweeps loaded inventories/containers. |
 | `/banitems hardban hand` | Hard-bans the item currently held in your main hand. |
 | `/banitems hardban <item>` | Hard-bans an item by registry ID, such as `minecraft:bedrock`. |
@@ -98,7 +101,7 @@ The mod is intended for dedicated servers and does not require players to instal
 | `/banitems unban hand` | Removes the ban for the item currently held in your main hand. |
 | `/banitems unban <item>` | Removes a ban by registry ID. |
 
-`/serverhelper *`, `/seen`, and `/vanish` require `server_helper_mod.staff` or vanilla operator permissions.
+`/serverhelper *`, `/seen`, `/vanish`, `/enchant`, and `/repair` require `server_helper_mod.staff` or vanilla operator permissions.
 
 ---
 
@@ -275,7 +278,7 @@ Aliases execute with the caller's normal command permissions. They do not bypass
 
 New aliases can be added with `/serverhelper reload`. Removing an alias from the command tree requires a server restart, but removed aliases stop executing after reload.
 
-Reserved command roots such as `serverhelper`, `banitems`, and `rules` are ignored as aliases.
+Reserved command roots such as `serverhelper`, `banitems`, `enchant`, `repair`, and `rules` are ignored as aliases.
 
 `afk`, `seen`, `staff`, and `vanish` are also reserved because they are built-in commands.
 
@@ -310,6 +313,10 @@ Players without staff permission do not see vanished staff in `/staff`, while st
 `/seen <player>` requires `server_helper_mod.staff` or vanilla operator permissions and shows whether a player is online. For online players, it reports their current dimension, coordinates, AFK status, and vanish status. For offline players, it reports the last stored logout time, last login time, and last-known location from `server_helper_mod_seen_players.json`.
 
 `/vanish` requires `server_helper_mod.staff` or vanilla operator permissions. It hides the vanished staff member from non-staff tab lists and applies no-particle invisibility. Other staff are notified when a staff member toggles vanish.
+
+`/enchant <enchantment>` requires `server_helper_mod.staff` or vanilla operator permissions. It applies the requested enchantment at that enchantment's maximum level to the staff member's main-hand item. The enchantment must be valid for the held item.
+
+`/repair` requires `server_helper_mod.staff` or vanilla operator permissions. It fully repairs the staff member's main-hand item.
 
 ---
 

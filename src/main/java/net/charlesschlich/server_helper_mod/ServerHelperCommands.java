@@ -336,8 +336,10 @@ public class ServerHelperCommands {
     private static boolean isReservedAlias(String alias) {
         return alias.equals("serverhelper")
                 || alias.equals("banitems")
+                || alias.equals("enchant")
                 || alias.equals("rules")
                 || alias.equals("afk")
+                || alias.equals("repair")
                 || alias.equals("seen")
                 || alias.equals("staff")
                 || alias.equals("vanish");
