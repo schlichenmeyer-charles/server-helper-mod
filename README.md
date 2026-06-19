@@ -6,12 +6,11 @@ The mod is intended for dedicated servers and does not require players to instal
 
 ---
 
-## What's New in 1.10.0
+## What's New in 1.11.0
 
-- Optional FTB Chunks integration that removes force-loading from teams with no login activity for 7 days by default.
-- Automatic checks at server startup and on a configurable interval.
-- `/serverhelper ftbchunks unloadall` to remove every FTB Chunks force-load while preserving claims.
-- No hard dependency: the rest of Server Helper works normally without FTB Chunks, FTB Teams, or FTB Library.
+- Optional FTB Essentials integration that automatically mutes chat spammers.
+- Configurable message-rate and duplicate-message thresholds.
+- No hard dependency: the auto-mute feature disables itself when FTB Essentials or its `/mute` command is unavailable, while the rest of Server Helper keeps working normally.
 
 ---
 
@@ -58,6 +57,12 @@ The mod is intended for dedicated servers and does not require players to instal
   - Uses FTB Chunks' team-level last-login data.
   - Runs at server startup and on a configurable interval.
   - Remains inactive when the required FTB mods are not installed.
+
+- **Optional FTB Essentials chat spam mutes**
+  - Automatically mutes players who send too many messages too quickly.
+  - Also detects repeated duplicate messages within the same rolling window.
+  - Uses FTB Essentials' own `/mute` command instead of implementing separate mute storage.
+  - Remains inactive when FTB Essentials is not installed or its mute command is disabled.
 
 ---
 
@@ -184,6 +189,26 @@ config/server_helper_mod_seen_players.json
 
 	# Minutes between automatic checks after startup.
 	check_interval_minutes = 60
+
+[auto_mute_chat_spam]
+	# Automatically mute players who send too many chat messages too quickly.
+	# Ignored when FTB Essentials is not installed or its mute command is disabled.
+	enabled = true
+
+	# Maximum chat messages within the rolling window before a mute is applied.
+	max_messages = 6
+
+	# Rolling time window, in seconds.
+	window_seconds = 10
+
+	# Maximum duplicate messages within the rolling window before a mute is applied.
+	duplicate_messages = 3
+
+	# FTB Essentials mute duration. Examples: 10m, 1h, 2d, or * for indefinite.
+	duration = "10m"
+
+	# Exempt Server Helper staff and operators from automatic spam mutes.
+	exempt_staff = true
 ```
 
 ### Config Options
@@ -204,6 +229,12 @@ config/server_helper_mod_seen_players.json
 | `ftb_chunks.unload_inactive_enabled` | Enables automatic inactive-team force-load cleanup when the FTB mods are present. |
 | `ftb_chunks.inactive_days` | Number of real-world inactive days before a team's chunks stop being force-loaded. |
 | `ftb_chunks.check_interval_minutes` | Minutes between automatic cleanup checks. |
+| `auto_mute_chat_spam.enabled` | Enables automatic chat spam mutes when FTB Essentials is present. |
+| `auto_mute_chat_spam.max_messages` | Chat message-rate threshold within the rolling window. |
+| `auto_mute_chat_spam.window_seconds` | Rolling window used for message-rate and duplicate-message checks. |
+| `auto_mute_chat_spam.duplicate_messages` | Duplicate-message threshold within the rolling window. |
+| `auto_mute_chat_spam.duration` | FTB Essentials mute duration, such as `10m`, `1h`, `2d`, or `*`. |
+| `auto_mute_chat_spam.exempt_staff` | Exempts Server Helper staff and operators from automatic spam mutes. |
 
 All restart times use the server's local timezone.
 
@@ -222,6 +253,20 @@ To remove every FTB Chunks force-load immediately:
 ```
 
 This command is independent of `unload_inactive_enabled`, so operators can use it even when automatic cleanup is disabled.
+
+---
+
+## FTB Essentials Auto Mute
+
+The chat spam auto-mute integration requires FTB Essentials. It remains optional; without FTB Essentials, or when FTB Essentials' mute command is disabled, Server Helper logs that the integration is inactive and all other features continue working.
+
+When a non-exempt player crosses the configured message-rate or duplicate-message threshold, Server Helper runs FTB Essentials' own command:
+
+```text
+mute <player> <duration>
+```
+
+The default duration is `10m`. Staff and operators are exempt by default through `auto_mute_chat_spam.exempt_staff`.
 
 ---
 
@@ -388,6 +433,7 @@ Build output is written under `build/libs/`.
 - Dedicated servers
 - Java **17**
 - Optional support for FTB Chunks/Teams/Library **2001.x** on Minecraft 1.20.1
+- Optional support for FTB Essentials **2001.x** on Minecraft 1.20.1
 
 This mod does not add gameplay content and is intended for server administration use.
 

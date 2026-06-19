@@ -41,6 +41,12 @@ public class Config {
     private static final ForgeConfigSpec.BooleanValue FTB_CHUNKS_UNLOAD_INACTIVE_ENABLED;
     private static final ForgeConfigSpec.IntValue FTB_CHUNKS_INACTIVE_DAYS;
     private static final ForgeConfigSpec.IntValue FTB_CHUNKS_CHECK_INTERVAL_MINUTES;
+    private static final ForgeConfigSpec.BooleanValue AUTO_MUTE_CHAT_SPAM_ENABLED;
+    private static final ForgeConfigSpec.IntValue AUTO_MUTE_CHAT_SPAM_MAX_MESSAGES;
+    private static final ForgeConfigSpec.IntValue AUTO_MUTE_CHAT_SPAM_WINDOW_SECONDS;
+    private static final ForgeConfigSpec.IntValue AUTO_MUTE_CHAT_SPAM_DUPLICATE_MESSAGES;
+    private static final ForgeConfigSpec.ConfigValue<String> AUTO_MUTE_CHAT_SPAM_DURATION;
+    private static final ForgeConfigSpec.BooleanValue AUTO_MUTE_CHAT_SPAM_EXEMPT_STAFF;
 
     static {
         // --- [general] ---
@@ -149,6 +155,35 @@ public class Config {
 
         BUILDER.pop();
 
+        // --- [auto_mute_chat_spam] ---
+        BUILDER.push("auto_mute_chat_spam");
+
+        AUTO_MUTE_CHAT_SPAM_ENABLED = BUILDER
+                .comment("When true, Server Helper automatically mutes players who send too many chat messages too quickly. This is ignored if FTB Essentials is not installed or its mute command is disabled.")
+                .define("enabled", true);
+
+        AUTO_MUTE_CHAT_SPAM_MAX_MESSAGES = BUILDER
+                .comment("Maximum chat messages a non-exempt player may send within the configured window before being muted.")
+                .defineInRange("max_messages", 6, 2, 100);
+
+        AUTO_MUTE_CHAT_SPAM_WINDOW_SECONDS = BUILDER
+                .comment("Rolling time window, in seconds, used by the chat spam detector.")
+                .defineInRange("window_seconds", 10, 1, 300);
+
+        AUTO_MUTE_CHAT_SPAM_DUPLICATE_MESSAGES = BUILDER
+                .comment("Maximum duplicate messages a non-exempt player may send within the configured window before being muted.")
+                .defineInRange("duplicate_messages", 3, 2, 100);
+
+        AUTO_MUTE_CHAT_SPAM_DURATION = BUILDER
+                .comment("FTB Essentials mute duration used for automatic spam mutes. Examples: 10m, 1h, 2d, or * for indefinite.")
+                .define("duration", "10m");
+
+        AUTO_MUTE_CHAT_SPAM_EXEMPT_STAFF = BUILDER
+                .comment("When true, players with Server Helper staff permission or operator permission are not auto-muted for chat spam.")
+                .define("exempt_staff", true);
+
+        BUILDER.pop();
+
         SPEC = BUILDER.build();
     }
 
@@ -170,6 +205,12 @@ public class Config {
     public static boolean ftbChunksUnloadInactiveEnabled;
     public static int ftbChunksInactiveDays;
     public static int ftbChunksCheckIntervalMinutes;
+    public static boolean autoMuteChatSpamEnabled;
+    public static int autoMuteChatSpamMaxMessages;
+    public static int autoMuteChatSpamWindowSeconds;
+    public static int autoMuteChatSpamDuplicateMessages;
+    public static String autoMuteChatSpamDuration;
+    public static boolean autoMuteChatSpamExemptStaff;
 
     private static void bake() {
         enableMessages = ENABLE_MESSAGES.get();
@@ -191,11 +232,18 @@ public class Config {
         ftbChunksUnloadInactiveEnabled = FTB_CHUNKS_UNLOAD_INACTIVE_ENABLED.get();
         ftbChunksInactiveDays = FTB_CHUNKS_INACTIVE_DAYS.get();
         ftbChunksCheckIntervalMinutes = FTB_CHUNKS_CHECK_INTERVAL_MINUTES.get();
+
+        autoMuteChatSpamEnabled = AUTO_MUTE_CHAT_SPAM_ENABLED.get();
+        autoMuteChatSpamMaxMessages = AUTO_MUTE_CHAT_SPAM_MAX_MESSAGES.get();
+        autoMuteChatSpamWindowSeconds = AUTO_MUTE_CHAT_SPAM_WINDOW_SECONDS.get();
+        autoMuteChatSpamDuplicateMessages = AUTO_MUTE_CHAT_SPAM_DUPLICATE_MESSAGES.get();
+        autoMuteChatSpamDuration = normalizeFtbEssentialsDuration(AUTO_MUTE_CHAT_SPAM_DURATION.get());
+        autoMuteChatSpamExemptStaff = AUTO_MUTE_CHAT_SPAM_EXEMPT_STAFF.get();
     }
 
     private static void logChanges(String reason) {
         LOGGER.info(
-                "[Server Helper Mod] Config {}: enableMessages={}, restartTimes={}, warnMinutes={}, commandToExecute={}, executeAtZero={}, rules={}, discordUrl={}, websiteUrl={}, maintenanceEnabled={}, maintenanceMessage={}, commandAliases={}, ftbChunksUnloadInactiveEnabled={}, ftbChunksInactiveDays={}, ftbChunksCheckIntervalMinutes={}",
+                "[Server Helper Mod] Config {}: enableMessages={}, restartTimes={}, warnMinutes={}, commandToExecute={}, executeAtZero={}, rules={}, discordUrl={}, websiteUrl={}, maintenanceEnabled={}, maintenanceMessage={}, commandAliases={}, ftbChunksUnloadInactiveEnabled={}, ftbChunksInactiveDays={}, ftbChunksCheckIntervalMinutes={}, autoMuteChatSpamEnabled={}, autoMuteChatSpamMaxMessages={}, autoMuteChatSpamWindowSeconds={}, autoMuteChatSpamDuplicateMessages={}, autoMuteChatSpamDuration={}, autoMuteChatSpamExemptStaff={}",
                 reason,
                 enableMessages,
                 restartTimes,
@@ -210,8 +258,23 @@ public class Config {
                 commandAliases,
                 ftbChunksUnloadInactiveEnabled,
                 ftbChunksInactiveDays,
-                ftbChunksCheckIntervalMinutes
+                ftbChunksCheckIntervalMinutes,
+                autoMuteChatSpamEnabled,
+                autoMuteChatSpamMaxMessages,
+                autoMuteChatSpamWindowSeconds,
+                autoMuteChatSpamDuplicateMessages,
+                autoMuteChatSpamDuration,
+                autoMuteChatSpamExemptStaff
         );
+    }
+
+    private static String normalizeFtbEssentialsDuration(String value) {
+        String duration = value == null ? "" : value.trim().toLowerCase();
+        if (duration.equals("*")) return duration;
+        if (duration.matches("\\d+(\\.\\d+)?[smhdw]")) return duration;
+
+        LOGGER.warn("[Server Helper Mod] Invalid auto mute duration '{}'; using 10m", value);
+        return "10m";
     }
 
     private static Map<String, String> parseCommandAliases(List<? extends String> entries) {
